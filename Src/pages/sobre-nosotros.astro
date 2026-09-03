@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { content } from '../config/content';
+import { siteConfig } from '../config/site';
+---
+
+<BaseLayout title="Sobre nosotros" description="Conocé a las personas detrás de B&Z Studios.">
+  <section class="page-hero page-hero--about">
+    <div class="shell split-hero">
+      <div>
+        <p class="kicker">Sobre B&Z</p>
+        <h1>{content.about.title}</h1>
+      </div>
+      <p class="lead">{content.about.intro}</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="shell member-grid">
+      {siteConfig.members.map((member, index) => (
+        <article class="member-card">
+          <span class="member-card__number" aria-hidden="true">0{index + 1}</span>
+          <div class="member-card__avatar" aria-hidden="true">{member.split(' ').map((part) => part[0]).join('')}</div>
+          <h2>{member}</h2>
+          <p>Parte de B&Z Studios</p>
+        </article>
+      ))}
+    </div>
+  </section>
+  <section class="section manifesto">
+    <div class="shell manifesto__grid">
+      <p class="kicker">Nuestra forma de crear</p>
+      <h2>El rol cambia.<br />La meta no.</h2>
+      <div>
+        <p>No trabajamos con cargos rígidos. Nos involucramos en las distintas partes del proceso según lo que cada proyecto necesita.</p>
+        <p>Hoy desarrollamos principalmente para la web; mañana pueden cambiar las herramientas y las plataformas. La curiosidad por hacer buenos juegos se queda.</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

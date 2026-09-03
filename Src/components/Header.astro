@@ -1,0 +1,50 @@
+---
+import { siteConfig } from '../config/site';
+
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
+---
+
+<header class="site-header" data-header>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <nav class="nav shell" aria-label="Navegación principal">
+    <a class="brand" href="/" aria-label="B&Z Studios, inicio">
+      <img src="/brand/logo-nav.webp" alt="" width="164" height="64" />
+    </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-menu">
+      <span class="menu-button__label">Menú</span>
+      <span class="menu-button__icon" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+    <div class="nav-links" id="main-menu" data-menu>
+      {siteConfig.navigation.map((item) => (
+        <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+      ))}
+    </div>
+  </nav>
+</header>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('.menu-button');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+
+  const closeMenu = () => {
+    button?.setAttribute('aria-expanded', 'false');
+    menu?.removeAttribute('data-open');
+    document.documentElement.removeAttribute('data-menu-open');
+  };
+
+  button?.addEventListener('click', () => {
+    const open = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!open));
+    menu?.toggleAttribute('data-open', !open);
+    document.documentElement.toggleAttribute('data-menu-open', !open);
+  });
+
+  menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeMenu();
+      button?.focus();
+    }
+  });
+</script>

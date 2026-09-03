@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Nivel no encontrado" description="La página que buscás no existe." noindex>
+  <section class="not-found">
+    <div class="shell not-found__inner">
+      <div class="error-code" aria-hidden="true">4<span>0</span>4</div>
+      <p class="kicker">Fuera del mapa</p>
+      <h1>Este nivel no existe.</h1>
+      <p>La ruta terminó en una pantalla que todavía no desbloqueamos.</p>
+      <div class="button-row">
+        <a class="button button--primary" href="/">Volver al inicio</a>
+        <a class="button button--ghost" href="/juegos/">Explorar juegos</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+import { siteConfig, type SocialKey } from '../config/site';
+
+const socialLabels: Record<SocialKey, string> = {
+  instagram: 'Instagram',
+  x: 'X',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  discord: 'Discord',
+  email: 'Email',
+};
+const socialEntries = Object.entries(siteConfig.socialLinks).filter(([, url]) => Boolean(url)) as [SocialKey, string][];
+---
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div>
+      <img class="footer-logo" src="/brand/logo-nav.webp" alt="B&Z Studios" width="164" height="64" loading="lazy" />
+      <p>Videojuegos independientes hechos con ideas compartidas, curiosidad y oficio.</p>
+    </div>
+    <div>
+      <p class="footer-title">Explorar</p>
+      <nav class="footer-links" aria-label="Navegación del pie">
+        {siteConfig.navigation.map((item) => <a href={item.href}>{item.label}</a>)}
+      </nav>
+    </div>
+    {socialEntries.length > 0 && (
+      <div>
+        <p class="footer-title">Encontranos</p>
+        <div class="footer-links">
+          {socialEntries.map(([key, url]) => <a href={url} target="_blank" rel="noreferrer">{socialLabels[key]}</a>)}
+        </div>
+      </div>
+    )}
+  </div>
+  <div class="shell footer-bottom">
+    <span>© {new Date().getFullYear()} B&Z Studios</span>
+    <span>Hecho para la próxima partida.</span>
+  </div>
+</footer>

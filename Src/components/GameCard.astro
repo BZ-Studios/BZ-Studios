@@ -1,0 +1,24 @@
+---
+import type { Game } from '../types/game';
+
+interface Props { game: Game }
+const { game } = Astro.props;
+---
+
+<article class="game-card" data-genre={game.genres.join('|')}>
+  <a class="game-card__media" href={`/juegos/${game.slug}/`} aria-label={`Ver información de ${game.name}`}>
+    <img src={game.cover} alt={`Portada de ${game.name}`} loading="lazy" width="720" height="480" />
+    <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>
+  </a>
+  <div class="game-card__body">
+    <div class="game-card__genres">{game.genres.join(' · ')}</div>
+    <h3><a href={`/juegos/${game.slug}/`}>{game.name}</a></h3>
+    <p>{game.shortDescription}</p>
+    <div class="game-card__actions">
+      {game.playUrl && game.status !== 'Próximamente' && (
+        <a class="button button--primary button--small" href={game.playUrl} target="_blank" rel="noreferrer">Jugar <span aria-hidden="true">↗</span></a>
+      )}
+      <a class="text-link" href={`/juegos/${game.slug}/`}>Más información <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</article>

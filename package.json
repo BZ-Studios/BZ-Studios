@@ -1,0 +1,20 @@
+{
+  "name": "bz-studios-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/astro/bin/astro.mjs dev",
+    "build": "node ./node_modules/astro/bin/astro.mjs check && node ./node_modules/astro/bin/astro.mjs build",
+    "check": "node ./node_modules/astro/bin/astro.mjs check",
+    "preview": "node ./node_modules/astro/bin/astro.mjs preview"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "latest",
+    "astro": "latest"
+  },
+  "devDependencies": {
+    "@astrojs/check": "latest",
+    "typescript": "latest"
+  }
+}

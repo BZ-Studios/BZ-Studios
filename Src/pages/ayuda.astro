@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const questions = [
+  { question: '¿Dónde puedo jugar los juegos de B&Z Studios?', answer: 'Cada juego disponible tendrá un botón “Jugar” en la cartelera y en su página individual. Ese enlace abre el sitio oficial del juego.' },
+  { question: '¿Dónde encuentro los controles?', answer: 'Cuando un juego necesite instrucciones, su página individual incluirá una sección de controles antes de entrar a jugar.' },
+  { question: 'Un juego no abre, ¿qué hago?', answer: 'Comprobá tu conexión y probá actualizar la página. Si el problema continúa, contanos desde Contacto qué juego intentabas abrir y qué ocurrió.' },
+  { question: '¿Cómo reporto un error?', answer: 'Usá el formulario de Contacto, elegí la categoría “Problema” y agregá todos los detalles que puedas: dispositivo, navegador y pasos previos al error.' },
+  { question: '¿Puedo enviar una idea o sugerencia?', answer: 'Sí. Nos interesa leer ideas, recomendaciones y feedback. Elegí la categoría correspondiente en el formulario de Contacto.' },
+];
+---
+
+<BaseLayout title="Ayuda" description="Respuestas rápidas para jugar, enviar ideas y reportar problemas a B&Z Studios.">
+  <section class="page-hero">
+    <div class="shell narrow">
+      <p class="kicker">Centro de ayuda</p>
+      <h1>¿Necesitás una pista?</h1>
+      <p>Acá están las respuestas rápidas. Si no encontrás lo que buscás, escribinos.</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="shell narrow faq-list">
+      {questions.map((item, index) => (
+        <details>
+          <summary><span class="faq-number">0{index + 1}</span>{item.question}<span class="faq-plus" aria-hidden="true">+</span></summary>
+          <p>{item.answer}</p>
+        </details>
+      ))}
+      <div class="help-cta">
+        <div><p class="kicker">¿Seguís trabado?</p><h2>Escribinos.</h2></div>
+        <a class="button button--secondary" href="/contacto/">Ir a contacto</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,14 @@
+---
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+
+<div class:list={['empty-catalog', { 'empty-catalog--compact': compact }] }>
+  <div class="pixel-loader" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="kicker">NUEVO SLOT</p>
+  <h2>La primera partida está cargando</h2>
+  <p>Nuestros primeros juegos están en desarrollo. Muy pronto esta cartelera será el lugar para descubrirlos y jugarlos.</p>
+  {!compact && <a class="button button--secondary" href="/contacto/">Mandanos una idea</a>}
+</div>

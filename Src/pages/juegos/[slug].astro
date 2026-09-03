@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GameCard from '../../components/GameCard.astro';
+import { games } from '../../data/games';
+import type { Game } from '../../types/game';
+
+export function getStaticPaths() {
+  return games.map((game) => ({ params: { slug: game.slug }, props: { game } }));
+}
+
+interface Props { game: Game }
+const { game } = Astro.props;
+const related = games.filter((item) => item.slug !== game.slug && item.genres.some((genre) => game.genres.includes(genre))).slice(0, 3);
+const gameSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoGame',
+  name: game.name,
+  description: game.seoDescription,
+  image: new URL(game.cover, Astro.site ?? Astro.url.origin).href,
+  genre: game.genres,
+  url: Astro.url.href,
+};
+---
+
+<BaseLayout title={game.seoTitle} description={game.seoDescription} image={game.cover} schema={gameSchema}>
+  <article>
+    <header class="game-detail-hero">
+      <div class="shell game-detail-hero__grid">
+        <img src={game.cover} alt={`Portada de ${game.name}`} width="900" height="600" />
+        <div>
+          <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>
+          <p class="kicker">{game.genres.join(' · ')}</p>
+          <h1>{game.name}</h1>
+          <p class="lead">{game.description}</p>
+          {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
+        </div>
+      </div>
+    </header>
+    {game.features && game.features.length > 0 && (
+      <section class="section"><div class="shell narrow"><p class="kicker">Características</p><h2>Lo que te espera</h2><ul class="feature-list">{game.features.map((feature) => <li>{feature}</li>)}</ul></div></section>
+    )}
+    {game.screenshots && game.screenshots.length > 0 && (
+      <section class="section"><div class="shell"><p class="kicker">Galería</p><h2>Dentro del juego</h2><div class="screenshot-grid">{game.screenshots.map((shot, index) => <img src={shot} alt={`Captura ${index + 1} de ${game.name}`} loading="lazy" width="900" height="506" />)}</div></div></section>
+    )}
+    {game.controls && game.controls.length > 0 && (
+      <section class="section"><div class="shell narrow"><p class="kicker">Controles</p><h2>Listo para jugar</h2><dl class="control-list">{game.controls.map((control) => <><dt>{control.input}</dt><dd>{control.action}</dd></>)}</dl></div></section>
+    )}
+    {related.length > 0 && <section class="section"><div class="shell"><p class="kicker">Seguí jugando</p><h2>Otros mundos</h2><div class="game-grid">{related.map((item) => <GameCard game={item} />)}</div></div></section>}
+  </article>
+</BaseLayout>

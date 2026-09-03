@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Contacto" description="Enviá ideas, sugerencias, consultas o reportes a B&Z Studios.">
+  <section class="page-hero page-hero--contact">
+    <div class="shell split-hero">
+      <div><p class="kicker">Contacto</p><h1>Te leemos.<br />En serio.</h1></div>
+      <p class="lead">Ideas, sugerencias, feedback o un problema con un juego: elegí la categoría y contanos todo.</p>
+    </div>
+  </section>
+  <section class="section contact-section">
+    <div class="shell contact-grid">
+      <div class="contact-aside">
+        <p class="kicker">Canal abierto</p>
+        <h2>Tu mensaje puede mejorar la próxima partida.</h2>
+        <p>No incluyas contraseñas ni información sensible. Para reportar un error, sumá el nombre del juego, tu dispositivo y qué ocurrió.</p>
+        <div class="contact-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+      <form class="contact-form" name="contacto" method="POST" action="/contacto/?enviado=1" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contacto" />
+        <p class="sr-only"><label>No completar: <input name="bot-field" /></label></p>
+        <div class="form-field"><label for="name">Nombre</label><input id="name" name="name" type="text" autocomplete="name" required minlength="2" /></div>
+        <div class="form-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required /></div>
+        <div class="form-field">
+          <label for="category">Categoría</label>
+          <select id="category" name="category" required>
+            <option value="">Elegí una opción</option>
+            <option>Idea</option><option>Sugerencia</option><option>Problema</option><option>Feedback sobre un juego</option><option>Consulta</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="message">Mensaje</label>
+          <textarea id="message" name="message" rows="7" required minlength="10"></textarea>
+          <span class="field-hint">Contanos al menos 10 caracteres.</span>
+        </div>
+        <button class="button button--primary" type="submit">Enviar mensaje <span aria-hidden="true">→</span></button>
+        <p class="form-status" role="status" tabindex="-1" hidden data-form-status>Mensaje enviado. Gracias por escribirnos.</p>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const status = document.querySelector<HTMLElement>('[data-form-status]');
+  if (params.get('enviado') === '1' && status) {
+    status.hidden = false;
+    status.focus();
+  }
+</script>

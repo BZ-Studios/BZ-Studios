@@ -1,0 +1,67 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { siteConfig } from '../config/site';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+  title = siteConfig.name,
+  description = siteConfig.description,
+  image = '/brand/og-brand.webp',
+  noindex = false,
+  schema,
+} = Astro.props;
+
+const pageTitle = title === siteConfig.name ? title : `${title} | ${siteConfig.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const imageUrl = new URL(image, Astro.site ?? Astro.url.origin);
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: siteConfig.name,
+  url: new URL('/', Astro.site ?? Astro.url.origin).href,
+  logo: new URL('/brand/logo.webp', Astro.site ?? Astro.url.origin).href,
+  founder: siteConfig.members.map((name) => ({ '@type': 'Person', name })),
+};
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex,follow" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content={siteConfig.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <title>{pageTitle}</title>
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+    {schema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
+  </head>
+  <body>
+    <Header />
+    <main id="contenido"><slot /></main>
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import GameCard from '../components/GameCard.astro';
+import EmptyCatalog from '../components/EmptyCatalog.astro';
+import { content } from '../config/content';
+import { featuredGames } from '../data/games';
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="hero-orb hero-orb--one" aria-hidden="true"></div>
+    <div class="hero-orb hero-orb--two" aria-hidden="true"></div>
+    <div class="shell hero__inner">
+      <div class="hero__copy">
+        <p class="kicker">{content.home.eyebrow}</p>
+        <h1>{content.home.title}</h1>
+        <p class="hero__intro">{content.home.intro}</p>
+        <div class="button-row">
+          <a class="button button--primary" href="/juegos/">Explorar juegos <span aria-hidden="true">→</span></a>
+          <a class="button button--ghost" href="/sobre-nosotros/">Conocenos</a>
+        </div>
+        <div class="hero__signal" aria-label="Estado del estudio">
+          <span aria-hidden="true"></span>
+          Primeros proyectos en desarrollo
+        </div>
+      </div>
+      <div class="hero__visual" aria-label="B&Z Studios">
+        <div class="hero__frame">
+          <span class="frame-label">PLAYER 01 + PLAYER 02</span>
+          <img src="/brand/logo.webp" alt="B&Z Studios" width="760" height="760" fetchpriority="high" />
+          <div class="frame-corners" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+    <a class="scroll-cue" href="#juegos" aria-label="Ir a juegos destacados"><span aria-hidden="true">↓</span> SCROLL</a>
+  </section>
+
+  <section class="section section--games" id="juegos">
+    <div class="shell">
+      <div class="section-heading-row">
+        <SectionHeading eyebrow="Selección B&Z" title="Entrá directo al juego" text="Los juegos mandan. Nosotros construimos el portal." />
+        <a class="text-link text-link--large" href="/juegos/">Ver cartelera completa <span aria-hidden="true">→</span></a>
+      </div>
+      {featuredGames.length > 0 ? (
+        <div class="game-grid">{featuredGames.map((game) => <GameCard game={game} />)}</div>
+      ) : <EmptyCatalog compact />}
+    </div>
+  </section>
+
+  <section class="section studio-strip">
+    <div class="shell studio-strip__grid">
+      <div class="studio-strip__art" aria-hidden="true">
+        <span class="big-number">02</span>
+        <span class="art-caption">PERSONAS / UN ESTUDIO</span>
+      </div>
+      <div>
+        <SectionHeading eyebrow="Detrás de B&Z" title="Ideas compartidas. Juegos con identidad." />
+        <p>Luis Zabala y Agustín Bustamante participamos en las distintas etapas de cada proyecto. Sin cargos rígidos: cada juego pide una mezcla distinta de ideas, diseño y desarrollo.</p>
+        <a class="text-link text-link--large" href="/sobre-nosotros/">Conocer el estudio <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section next-level">
+    <div class="shell next-level__inner">
+      <div>
+        <p class="kicker">Próximo nivel</p>
+        <h2>Esto recién empieza.</h2>
+        <p>La cartelera crecerá con nuevos mundos, mecánicas y formas de jugar.</p>
+      </div>
+      <a class="button button--secondary" href="/contacto/">Compartir una idea</a>
+    </div>
+  </section>
+</BaseLayout>
