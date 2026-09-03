@@ -1,8 +1,8 @@
 export const content = {
   home: {
     eyebrow: 'Estudio independiente de videojuegos',
-    title: 'Dos personas. Mundos por jugar.',
-    intro: 'Creamos videojuegos con identidad, curiosidad y muchas ganas de encontrar esa idea que no podés soltar.',
+    title: 'Ideas que se vuelven juego.',
+    intro: 'En B&Z Studios desarrollamos videojuegos independientes con personalidad, curiosidad y ganas de sorprender.',
   },
   catalog: {
     title: 'Elegí tu próxima partida',
