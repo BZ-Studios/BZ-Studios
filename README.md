@@ -21,10 +21,10 @@ Validación de producción: `npm run build`.
 - `Src/config/site.ts`: navegación, integrantes y redes sociales.
 - `Src/config/content.ts`: textos generales.
 - `Src/styles/global.css`: sistema visual completo.
-- `public/brand/`: copias web optimizadas de la identidad original.
+- `public/brand/`: copias web de la identidad; la página usa `logo-transparent.png`.
 - `public/games/`: portadas y capturas, agrupadas por slug.
 
-Los originales de marca permanecen intactos en `Src/Identidad/`.
+Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transparente está guardada como `Src/Identidad/Logo sin fondo.png`.
 
 ## Agregar un juego
 

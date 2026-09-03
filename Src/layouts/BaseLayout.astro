@@ -28,7 +28,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: siteConfig.name,
   url: new URL('/', Astro.site ?? Astro.url.origin).href,
-  logo: new URL('/brand/logo.webp', Astro.site ?? Astro.url.origin).href,
+  logo: new URL('/brand/logo-transparent.png', Astro.site ?? Astro.url.origin).href,
   founder: siteConfig.members.map((name) => ({ '@type': 'Person', name })),
 };
 ---
@@ -43,7 +43,7 @@ const organizationSchema = {
     <meta name="generator" content={Astro.generator} />
     {noindex && <meta name="robots" content="noindex,follow" />}
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" href="/brand/logo-transparent.png" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_AR" />
     <meta property="og:site_name" content={siteConfig.name} />
