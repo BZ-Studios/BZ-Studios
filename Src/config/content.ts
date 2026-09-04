@@ -1,7 +1,7 @@
 export const content = {
   home: {
     eyebrow: 'Estudio independiente de videojuegos',
-    title: 'El próximo juego empieza acá.',
+    title: 'El entretenimiento se juega acá.',
     intro: 'En B&Z Studios desarrollamos videojuegos independientes con personalidad, curiosidad y ganas de sorprender.',
   },
   catalog: {
