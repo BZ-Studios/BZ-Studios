@@ -16,7 +16,7 @@ const gameSchema = {
   '@type': 'VideoGame',
   name: game.name,
   description: game.seoDescription,
-  image: new URL(game.cover, Astro.site ?? Astro.url.origin).href,
+  ...(game.cover ? { image: new URL(game.cover, Astro.site ?? Astro.url.origin).href } : {}),
   genre: game.genres,
   url: Astro.url.href,
 };
@@ -26,7 +26,14 @@ const gameSchema = {
   <article>
     <header class="game-detail-hero">
       <div class="shell game-detail-hero__grid">
-        <img src={game.cover} alt={`Portada de ${game.name}`} width="900" height="600" />
+        {game.cover ? (
+          <img src={game.cover} alt={`Portada de ${game.name}`} width="900" height="600" />
+        ) : (
+          <div class="game-detail-placeholder" aria-label={`${game.name}, portada próximamente`}>
+            <span>Primer lanzamiento</span>
+            <strong>{game.name}</strong>
+          </div>
+        )}
         <div>
           <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>
           <p class="kicker">{game.genres.join(' · ')}</p>

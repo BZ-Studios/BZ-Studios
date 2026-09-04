@@ -4,7 +4,21 @@ import type { Game } from '../types/game';
  * Catálogo central. Agregar un juego aquí crea su tarjeta y su página individual.
  * Los recursos de cada juego viven en /public/games/<slug>/.
  */
-export const games: Game[] = [];
+export const games: Game[] = [
+  {
+    id: 'monkey-climb-remastered-v2',
+    slug: 'monkey-climb-remastered-v2',
+    name: 'Monkey Climb Remastered V2',
+    shortDescription: 'Nuestro primer juego ya está listo para jugar directamente desde el navegador.',
+    description: 'El primer juego de B&Z Studios ya está disponible. Entrá a su sitio oficial y empezá la partida desde tu navegador.',
+    genres: ['Web'],
+    status: 'Disponible',
+    playUrl: 'https://monkey-climb-remastered-v2.vercel.app/',
+    featured: true,
+    seoTitle: 'Monkey Climb Remastered V2',
+    seoDescription: 'Jugá Monkey Climb Remastered V2, el primer videojuego disponible de B&Z Studios.',
+  },
+];
 
 export const featuredGames = games.filter((game) => game.featured);
 

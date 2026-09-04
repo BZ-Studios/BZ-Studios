@@ -7,7 +7,14 @@ const { game } = Astro.props;
 
 <article class="game-card" data-genre={game.genres.join('|')}>
   <a class="game-card__media" href={`/juegos/${game.slug}/`} aria-label={`Ver información de ${game.name}`}>
-    <img src={game.cover} alt={`Portada de ${game.name}`} loading="lazy" width="720" height="480" />
+    {game.cover ? (
+      <img src={game.cover} alt={`Portada de ${game.name}`} loading="lazy" width="720" height="480" />
+    ) : (
+      <div class="game-card__placeholder" aria-hidden="true">
+        <span>Primer lanzamiento</span>
+        <strong>{game.name}</strong>
+      </div>
+    )}
     <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>
   </a>
   <div class="game-card__body">

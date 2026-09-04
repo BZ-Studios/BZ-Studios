@@ -13,7 +13,7 @@ export interface Game {
   name: string;
   shortDescription: string;
   description: string;
-  cover: string;
+  cover?: string;
   screenshots?: string[];
   trailerUrl?: string;
   genres: string[];
