@@ -6,17 +6,17 @@ import type { Game } from '../types/game';
  */
 export const games: Game[] = [
   {
-    id: 'monkey-climb-remastered-v2',
-    slug: 'monkey-climb-remastered-v2',
-    name: 'Monkey Climb Remastered V2',
+    id: 'monkey-climb-remastered',
+    slug: 'monkey-climb-remastered',
+    name: 'Monkey Climb Remastered',
     shortDescription: 'Nuestro primer juego ya está listo para jugar directamente desde el navegador.',
     description: 'El primer juego de B&Z Studios ya está disponible. Entrá a su sitio oficial y empezá la partida desde tu navegador.',
     genres: ['Web'],
     status: 'Disponible',
-    playUrl: 'https://monkey-climb-remastered-v2.vercel.app/',
+    playUrl: 'https://monkeyclimbremastered.com',
     featured: true,
-    seoTitle: 'Monkey Climb Remastered V2',
-    seoDescription: 'Jugá Monkey Climb Remastered V2, el primer videojuego disponible de B&Z Studios.',
+    seoTitle: 'Monkey Climb Remastered',
+    seoDescription: 'Jugá Monkey Climb Remastered, el primer videojuego disponible de B&Z Studios.',
   },
 ];
 
