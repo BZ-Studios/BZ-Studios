@@ -7,3 +7,6 @@ dist/
 !.env.example
 tmp/
 *.tgz
+
+# Local Netlify folder
+.netlify

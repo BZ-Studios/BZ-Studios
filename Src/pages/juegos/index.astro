@@ -2,7 +2,10 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GameCard from '../../components/GameCard.astro';
 import EmptyCatalog from '../../components/EmptyCatalog.astro';
-import { games, gameGenres } from '../../data/games';
+import { getPublicGames } from '../../lib/games';
+
+const games = await getPublicGames();
+const gameGenres = [...new Set(games.flatMap((game) => game.genres))].sort((a, b) => a.localeCompare(b, 'es'));
 ---
 
 <BaseLayout title="Juegos" description="Explorá la cartelera de videojuegos de B&Z Studios.">

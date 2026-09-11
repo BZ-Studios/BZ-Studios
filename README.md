@@ -1,6 +1,6 @@
 # B&Z Studios
 
-Sitio oficial estático construido con Astro, TypeScript y CSS.
+Sitio oficial construido con Astro, TypeScript, CSS y Supabase. Incluye catálogo dinámico y panel privado de administración.
 
 ## Desarrollo local
 
@@ -16,7 +16,10 @@ Validación de producción: `npm run build`.
 - `Src/pages/`: rutas del sitio.
 - `Src/components/`: piezas visuales reutilizables.
 - `Src/layouts/`: estructura HTML, metadata y SEO compartidos.
-- `Src/data/games.ts`: catálogo central de juegos.
+- `Src/data/games.ts`: catálogo de respaldo mientras Supabase no está inicializado.
+- `Src/lib/`: conexión pública/SSR y consultas del catálogo.
+- `Src/pages/admin/`: acceso privado y panel de juegos.
+- `supabase/`: migración SQL e instrucciones de configuración.
 - `Src/types/game.ts`: modelo de datos y estados válidos.
 - `Src/config/site.ts`: navegación, integrantes y redes sociales.
 - `Src/config/content.ts`: textos generales.
@@ -26,18 +29,13 @@ Validación de producción: `npm run build`.
 
 Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transparente está guardada como `Src/Identidad/Logo sin fondo.png`.
 
-## Agregar un juego
+## Gestionar juegos
 
-1. Creá `public/games/slug-del-juego/`.
-2. Guardá allí la portada (`cover.webp`) y las capturas (`screenshot-01.webp`, etc.).
-3. Abrí `Src/data/games.ts` y agregá un objeto al arreglo `games` que cumpla el tipo `Game`.
-4. Usá rutas como `/games/slug-del-juego/cover.webp` en `cover` y `screenshots`.
-5. Indicá uno o más valores en `genres`; los filtros se generan automáticamente.
-6. Usá uno de estos estados: `Disponible`, `En desarrollo`, `Demo`, `Próximamente`.
-7. Agregá la URL externa en `playUrl`. Omitila si todavía no se puede jugar.
-8. Usá `featured: true` para mostrarlo en Inicio.
+1. Aplicá la migración y autorizá una cuenta siguiendo `supabase/README.md`.
+2. Iniciá el proyecto y abrí `http://localhost:4321/admin/`.
+3. Desde el panel podés crear, editar, ocultar, destacar o eliminar juegos, y subir portada y capturas.
 
-La ruta `/juegos/slug-del-juego/`, su metadata y sus datos estructurados se generan automáticamente.
+La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase.
 
 ## Contenido y configuración
 
@@ -46,14 +44,21 @@ La ruta `/juegos/slug-del-juego/`, su metadata y sus datos estructurados se gene
 - Textos generales: `Src/config/content.ts`.
 - URL canónica: variable `PUBLIC_SITE_URL` (ver `.env.example`).
 
+## Supabase
+
+Copiá `.env.example` como `.env` y completá las variables públicas. El `.env` está ignorado por Git. Las políticas RLS restringen las escrituras a los usuarios listados en `public.admins`; el frontend nunca usa claves secretas.
+
 ## Contacto
 
-El formulario está preparado para Netlify Forms con validación HTML, campo anti-spam y confirmación. En Vercel hay que conectarlo a un endpoint o función antes de recibir mensajes.
+El formulario está preparado para Netlify Forms con validación HTML, campo anti-spam y confirmación.
 
 ## Despliegue
 
-En Netlify, conectá el repositorio: `netlify.toml` ejecuta el build y publica `dist/`. En Vercel, importá el repositorio: `vercel.json` contiene la misma configuración. En ambos casos configurá `PUBLIC_SITE_URL` con el dominio final.
+El proyecto usa el adaptador oficial de Netlify para renderizado bajo demanda y mantiene Netlify Forms. Conectá el repositorio de GitHub, configurá las tres variables indicadas en `supabase/README.md` y desplegá. `netlify.toml` ejecuta el build y publica `dist/`.
 
-## Pendientes deliberados
+## Crear el repositorio en GitHub
 
-No hay login, calificaciones, comentarios, noticias, base de datos, panel administrador, tienda ni pagos. Tampoco se muestran redes sin URL ni se inventaron juegos de demostración.
+1. Creá un repositorio vacío en GitHub, sin README ni `.gitignore`.
+2. Ejecutá `git remote add origin URL_DEL_REPOSITORIO`.
+3. Ejecutá `git branch -M main` y `git push -u origin main`.
+4. Importá ese repositorio en Netlify y cargá las variables de entorno; `.env` nunca debe subirse.

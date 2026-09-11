@@ -1,15 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GameCard from '../../components/GameCard.astro';
-import { games } from '../../data/games';
-import type { Game } from '../../types/game';
+import { getPublicGameBySlug, getPublicGames } from '../../lib/games';
 
-export function getStaticPaths() {
-  return games.map((game) => ({ params: { slug: game.slug }, props: { game } }));
-}
+const game = await getPublicGameBySlug(Astro.params.slug ?? '');
+if (!game) return Astro.redirect('/404/', 302);
 
-interface Props { game: Game }
-const { game } = Astro.props;
+const games = await getPublicGames();
 const related = games.filter((item) => item.slug !== game.slug && item.genres.some((genre) => game.genres.includes(genre))).slice(0, 3);
 const gameSchema = {
   '@context': 'https://schema.org',
@@ -39,7 +36,10 @@ const gameSchema = {
           <p class="kicker">{game.genres.join(' · ')}</p>
           <h1>{game.name}</h1>
           <p class="lead">{game.description}</p>
-          {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
+          <div class="button-row">
+            {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
+            {game.trailerUrl && <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>}
+          </div>
         </div>
       </div>
     </header>

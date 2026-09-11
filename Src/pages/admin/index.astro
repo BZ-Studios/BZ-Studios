@@ -1,0 +1,96 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getAdminSession } from '../../lib/admin';
+import { GAME_STATUSES } from '../../types/game';
+
+const session = await getAdminSession(Astro.request, Astro.cookies);
+if (!session.user || !session.isAdmin || !session.supabase) return Astro.redirect('/admin/login/');
+
+const { data: rawGames, error } = await session.supabase
+  .from('games')
+  .select('*, game_images(id, storage_path, kind, alt_text, sort_order)')
+  .order('created_at', { ascending: false });
+
+const games = rawGames ?? [];
+const publicMediaUrl = (path: string) => session.supabase!.storage.from('game-media').getPublicUrl(path).data.publicUrl;
+const serializedGames = games.map((game) => ({
+  ...game,
+  game_images: (game.game_images ?? []).map((image: Record<string, unknown>) => ({
+    ...image,
+    public_url: publicMediaUrl(String(image.storage_path)),
+  })),
+}));
+---
+
+<AdminLayout title="Panel de juegos">
+  <header class="admin-topbar">
+    <div class="admin-shell admin-topbar__inner">
+      <a class="admin-brand" href="/admin/"><img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" /><span>Administración</span></a>
+      <div class="admin-user">
+        <span>{session.user.email}</span>
+        <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio</a>
+        <form method="post" action="/admin/logout/"><button class="button button--ghost button--small" type="submit">Salir</button></form>
+      </div>
+    </div>
+  </header>
+  <main class="admin-main">
+    <div class="admin-shell">
+      <div class="admin-heading">
+        <div><p class="kicker">Catálogo</p><h1>Panel de juegos</h1><p>Publicá, ocultá y actualizá el contenido sin tocar el código.</p></div>
+        <button class="button button--primary" type="button" data-new-game>Nuevo juego</button>
+      </div>
+      {error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {error.message}</p>}
+      <p class="admin-message" data-admin-message hidden aria-live="polite"></p>
+      <div class="admin-grid">
+        <section class="admin-panel">
+          <h2>Juegos ({games.length})</h2>
+          <div class="admin-game-list">
+            {serializedGames.length === 0 && <p>Todavía no hay juegos guardados.</p>}
+            {serializedGames.map((game) => (
+              <article class="admin-game">
+                <div class="admin-game__header"><div><h3>{game.name}</h3><p>/{game.slug} · {game.status} · {game.is_visible ? 'Visible' : 'Oculto'}</p></div><span class="status-badge"><span></span>{game.featured ? 'Destacado' : 'Catálogo'}</span></div>
+                <div class="admin-game__actions">
+                  <button class="button button--ghost button--small" type="button" data-edit-game={JSON.stringify(game)}>Editar</button>
+                  <button class="button button--ghost button--small" type="button" data-toggle-game={game.id} data-visible={String(game.is_visible)}>{game.is_visible ? 'Ocultar' : 'Publicar'}</button>
+                  <button class="button button--danger button--small" type="button" data-delete-game={game.id} data-game-name={game.name}>Eliminar</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section class="admin-panel" id="editor">
+          <h2 data-editor-title>Nuevo juego</h2>
+          <form class="admin-form" data-game-form>
+            <input type="hidden" name="id" />
+            <div class="admin-form-grid">
+              <div class="admin-field"><label for="name">Nombre *</label><input id="name" name="name" required /></div>
+              <div class="admin-field"><label for="slug">Slug *</label><input id="slug" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /><small>Ej.: monkey-climb-remastered</small></div>
+              <div class="admin-field admin-field--full"><label for="short_description">Descripción breve *</label><textarea id="short_description" name="short_description" maxlength="240" required></textarea></div>
+              <div class="admin-field admin-field--full"><label for="description">Descripción completa *</label><textarea id="description" name="description" required></textarea></div>
+              <div class="admin-field"><label for="play_url">URL para jugar</label><input id="play_url" name="play_url" type="url" /></div>
+              <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" /></div>
+              <div class="admin-field"><label for="status">Estado *</label><select id="status" name="status" required>{GAME_STATUSES.map((status) => <option value={status}>{status}</option>)}</select></div>
+              <div class="admin-field"><label for="published_at">Fecha de publicación</label><input id="published_at" name="published_at" type="date" /></div>
+              <div class="admin-field"><label for="platforms">Plataformas</label><input id="platforms" name="platforms" placeholder="Web, Windows" /></div>
+              <div class="admin-field"><label for="genres">Géneros *</label><input id="genres" name="genres" placeholder="Arcade, Plataformas" required /></div>
+              <div class="admin-field admin-field--full"><label for="features">Características</label><textarea id="features" name="features" placeholder="Una característica por línea"></textarea></div>
+              <div class="admin-field admin-field--full"><label for="controls">Controles</label><textarea id="controls" name="controls" placeholder="Espacio | Saltar&#10;Flechas | Moverse"></textarea></div>
+              <div class="admin-field"><label for="seo_title">Título SEO</label><input id="seo_title" name="seo_title" /></div>
+              <div class="admin-field"><label for="seo_description">Descripción SEO</label><input id="seo_description" name="seo_description" maxlength="160" /></div>
+              <div class="admin-field"><label for="cover">Portada</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg,image/webp,image/avif" /></div>
+              <div class="admin-field"><label for="screenshots">Capturas</label><input id="screenshots" name="screenshots" type="file" accept="image/png,image/jpeg,image/webp,image/avif" multiple /></div>
+              <div class="admin-field admin-field--full admin-checks"><label><input name="featured" type="checkbox" /> Destacado en inicio</label><label><input name="is_visible" type="checkbox" checked /> Visible públicamente</label></div>
+            </div>
+            <div class="admin-actions"><button class="button button--primary" type="submit">Guardar juego</button><button class="button button--ghost" type="reset" data-cancel-edit>Limpiar</button></div>
+          </form>
+          <div data-current-media hidden><h2>Imágenes actuales</h2><div class="admin-media" data-media-list></div></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script is:inline type="application/json" id="admin-games" set:html={JSON.stringify(serializedGames).replace(/</g, '\\u003c')} />
+  <script>import '../../scripts/admin';</script>
+</AdminLayout>

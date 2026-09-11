@@ -4,7 +4,9 @@ import SectionHeading from '../components/SectionHeading.astro';
 import GameCard from '../components/GameCard.astro';
 import EmptyCatalog from '../components/EmptyCatalog.astro';
 import { content } from '../config/content';
-import { featuredGames } from '../data/games';
+import { getPublicGames } from '../lib/games';
+
+const featuredGames = (await getPublicGames()).filter((game) => game.featured);
 ---
 
 <BaseLayout>

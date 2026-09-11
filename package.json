@@ -10,7 +10,10 @@
     "preview": "node ./node_modules/astro/bin/astro.mjs preview"
   },
   "dependencies": {
+    "@astrojs/netlify": "^8.2.5",
     "@astrojs/sitemap": "latest",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
     "astro": "latest"
   },
   "devDependencies": {
