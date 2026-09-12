@@ -154,12 +154,12 @@ p { color: var(--muted); }
 .filter-button.is-active { background: var(--brand-gradient); color: #09020a; border-color: transparent; }
 .filter-status { margin-bottom: 2rem; font-size: .85rem; }
 .member-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.25rem; }
-.member-card { position: relative; min-height: 27rem; padding: 2rem; border: 1px solid rgba(255,255,255,.15); border-radius: 12px; background: radial-gradient(circle at 82% 20%,rgba(124,25,230,.16),transparent 38%),linear-gradient(145deg,rgba(22,18,29,.98),rgba(9,7,13,.98)); display: flex; flex-direction: column; justify-content: end; overflow: hidden; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.22); }
+.member-card { position: relative; min-height: 31rem; padding: 3.25rem 2rem 2rem; border: 1px solid rgba(255,255,255,.15); border-radius: 12px; background: radial-gradient(circle at 82% 20%,rgba(124,25,230,.16),transparent 38%),linear-gradient(145deg,rgba(22,18,29,.98),rgba(9,7,13,.98)); display: grid; grid-template-rows: 8rem auto; align-content: start; gap: 4rem; overflow: hidden; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.22); }
 .member-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,transparent 55%,rgba(196,20,217,.16)); }
 .member-card__number { position: absolute; top: 1rem; right: 1.5rem; font-family: var(--font-display); font-size: 5rem; line-height: 1; color: rgba(255,255,255,.08); }
-.member-card__avatar { position: absolute; top: 5.25rem; left: 2rem; width: 8rem; height: 8rem; display: grid; place-items: center; background: var(--brand-gradient); color: #08020a; font-family: var(--font-display); font-size: 3rem; box-shadow: .6rem .6rem 0 rgba(255,255,255,.08); }
-.member-card__content { position: relative; z-index: 1; }
-.member-card h2 { position: relative; font-size: clamp(2.4rem,5vw,4.5rem); }
+.member-card__avatar { position: relative; z-index: 1; width: 8rem; height: 8rem; display: grid; place-items: center; background: var(--brand-gradient); color: #08020a; font-family: var(--font-display); font-size: 3rem; box-shadow: .6rem .6rem 0 rgba(255,255,255,.08); }
+.member-card__content { position: relative; z-index: 1; min-width: 0; }
+.member-card h2 { position: relative; max-width: 100%; font-size: clamp(2.6rem,4vw,4rem); overflow-wrap: anywhere; }
 .member-card p { position: relative; margin-bottom: 0; text-transform: uppercase; letter-spacing: .1em; font-size: .72rem; }
 .member-card__social { width: fit-content; margin-top: 1.25rem; padding: .65rem .85rem; display: inline-flex; align-items: center; gap: .55rem; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; color: #fff; background: rgba(255,255,255,.04); text-decoration: none; font-size: .76rem; font-weight: 850; transition: border-color .2s ease,background .2s ease,transform .2s ease; }
 .member-card__social svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: var(--pink); stroke-width: 1.8; }
@@ -254,7 +254,9 @@ p { color: var(--muted); }
   .big-number { font-size: 12rem; }
   .next-level__inner,.footer-bottom,.help-cta { display: flex; }
   .page-hero { padding: 9rem 0 3.5rem; }
-  .member-card { min-height: 23rem; }
+  .member-card { min-height: 29rem; padding: 2.5rem 1.5rem 1.5rem; grid-template-rows: 7rem auto; gap: 3rem; }
+  .member-card__avatar { width: 7rem; height: 7rem; font-size: 2.6rem; }
+  .member-card h2 { font-size: clamp(2.4rem,12vw,3.4rem); }
   .faq-list summary { grid-template-columns: 2rem 1fr auto; gap: .6rem; }
   .faq-list details > p { margin: -.5rem 2rem 2rem 2.6rem; }
   .contact-section { padding-top: 3rem; }
