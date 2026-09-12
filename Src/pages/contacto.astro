@@ -17,8 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p>No incluyas contraseñas ni información sensible. Para reportar un error, sumá el nombre del juego, tu dispositivo y qué ocurrió.</p>
         <div class="contact-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
-      <form class="contact-form" name="contacto" method="POST" action="/contacto/?enviado=1" data-netlify="true" netlify-honeypot="bot-field">
-        <input type="hidden" name="form-name" value="contacto" />
+      <form class="contact-form" name="contacto" method="POST" action="/api/contact">
         <p class="sr-only"><label>No completar: <input name="bot-field" /></label></p>
         <div class="form-field"><label for="name">Nombre</label><input id="name" name="name" type="text" autocomplete="name" required minlength="2" /></div>
         <div class="form-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required /></div>
@@ -36,6 +35,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <button class="button button--primary" type="submit">Enviar mensaje <span aria-hidden="true">→</span></button>
         <p class="form-status" role="status" tabindex="-1" hidden data-form-status>Mensaje enviado. Gracias por escribirnos.</p>
+        <p class="form-status" role="alert" tabindex="-1" hidden data-form-error>No pudimos enviar el mensaje. Revisá los campos e intentá nuevamente.</p>
       </form>
     </div>
   </section>
@@ -44,8 +44,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script>
   const params = new URLSearchParams(window.location.search);
   const status = document.querySelector<HTMLElement>('[data-form-status]');
+  const error = document.querySelector<HTMLElement>('[data-form-error]');
   if (params.get('enviado') === '1' && status) {
     status.hidden = false;
     status.focus();
+  }
+  if (params.get('error') === '1' && error) {
+    error.hidden = false;
+    error.focus();
   }
 </script>

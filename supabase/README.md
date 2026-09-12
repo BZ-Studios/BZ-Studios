@@ -4,6 +4,8 @@
 
 En el panel de Supabase abrí **SQL Editor**, creá una consulta nueva, pegá todo el contenido de `migrations/202609110001_init_catalog.sql` y ejecutala una sola vez. La migración crea el catálogo, las políticas RLS, el bucket público de imágenes y el juego inicial.
 
+Ejecutá también `migrations/202609120001_contact_messages.sql`. Esta segunda migración permite que el formulario de contacto funcione en Vercel.
+
 ## 2. Crear la cuenta administradora
 
 En **Authentication → Users**, elegí **Add user → Create new user**. Usá el correo de B&Z Studios, una contraseña segura y marcá el correo como confirmado.
@@ -23,13 +25,13 @@ No habilites un formulario público de registro. El panel solo admite usuarios q
 
 En **Authentication → URL Configuration**:
 
-- Site URL local: `http://localhost:4321`
-- Redirect URL local: `http://localhost:4321/admin/**`
-- Al publicar, agregá también el dominio final con `/admin/**`.
+- Site URL: el dominio de producción asignado por Vercel.
+- Redirect URL de producción: el mismo dominio terminado en `/**`.
+- Redirect URL local opcional: `http://localhost:4321/**`.
 
 ## 4. Variables de entorno
 
-El archivo `.env` local ya usa las credenciales públicas. En Netlify agregá:
+El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
 
 - `PUBLIC_SUPABASE_URL`
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`

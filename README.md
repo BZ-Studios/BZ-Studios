@@ -50,11 +50,11 @@ Copiá `.env.example` como `.env` y completá las variables públicas. El `.env`
 
 ## Contacto
 
-El formulario está preparado para Netlify Forms con validación HTML, campo anti-spam y confirmación.
+El formulario valida los campos en el servidor y guarda los mensajes en Supabase. Requiere la segunda migración indicada en `supabase/README.md`.
 
 ## Despliegue
 
-El proyecto usa el adaptador oficial de Netlify para renderizado bajo demanda y mantiene Netlify Forms. Conectá el repositorio de GitHub, configurá las tres variables indicadas en `supabase/README.md` y desplegá. `netlify.toml` ejecuta el build y publica `dist/`.
+El proyecto usa el adaptador oficial de Vercel para renderizado bajo demanda. Importá el repositorio de GitHub en Vercel, configurá las tres variables indicadas en `supabase/README.md` y desplegá.
 
 ## Crear el repositorio en GitHub
 
