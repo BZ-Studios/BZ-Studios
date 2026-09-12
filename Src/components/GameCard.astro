@@ -3,6 +3,7 @@ import type { Game } from '../types/game';
 
 interface Props { game: Game }
 const { game } = Astro.props;
+const monogram = game.name.split(/\s+/).map((word) => word[0]).join('').slice(0, 3).toUpperCase();
 ---
 
 <article class="game-card" data-genre={game.genres.join('|')}>
@@ -11,8 +12,11 @@ const { game } = Astro.props;
       <img src={game.cover} alt={`Portada de ${game.name}`} loading="lazy" width="720" height="480" />
     ) : (
       <div class="game-card__placeholder" aria-hidden="true">
-        <span>Primer lanzamiento</span>
-        <strong>{game.name}</strong>
+        <span class="game-card__pixel game-card__pixel--one"></span>
+        <span class="game-card__pixel game-card__pixel--two"></span>
+        <span class="game-card__pixel game-card__pixel--three"></span>
+        <strong class="game-card__monogram">{monogram}</strong>
+        <span class="game-card__launch">Primer lanzamiento</span>
       </div>
     )}
     <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>

@@ -18,7 +18,7 @@ Validación de producción: `npm run build`.
 - `Src/layouts/`: estructura HTML, metadata y SEO compartidos.
 - `Src/data/games.ts`: catálogo de respaldo mientras Supabase no está inicializado.
 - `Src/lib/`: conexión pública/SSR y consultas del catálogo.
-- `Src/pages/admin/`: acceso privado y panel de juegos.
+- `Src/pages/admin/`: acceso privado, catálogo, perfiles del equipo y bandeja de mensajes.
 - `supabase/`: migración SQL e instrucciones de configuración.
 - `Src/types/game.ts`: modelo de datos y estados válidos.
 - `Src/config/site.ts`: navegación, integrantes y redes sociales.
@@ -31,11 +31,11 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 
 ## Gestionar juegos
 
-1. Aplicá la migración y autorizá una cuenta siguiendo `supabase/README.md`.
+1. Aplicá las migraciones y autorizá una cuenta siguiendo `supabase/README.md`.
 2. Iniciá el proyecto y abrí `http://localhost:4321/admin/`.
 3. Desde el panel podés crear, editar, ocultar, destacar o eliminar juegos, y subir portada y capturas.
 
-La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase.
+La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante y administrar los mensajes recibidos.
 
 ## Contenido y configuración
 
@@ -50,7 +50,7 @@ Copiá `.env.example` como `.env` y completá las variables públicas. El `.env`
 
 ## Contacto
 
-El formulario valida los campos en el servidor y guarda los mensajes en Supabase. Requiere la segunda migración indicada en `supabase/README.md`.
+El formulario valida los campos en el servidor y guarda siempre los mensajes en Supabase. Si `RESEND_API_KEY` está configurada, además envía una notificación a `CONTACT_TO_EMAIL` (por defecto `bzstudios.games@gmail.com`). Para producción, configurá `CONTACT_FROM_EMAIL` con una dirección de un dominio verificado en Resend.
 
 ## Despliegue
 

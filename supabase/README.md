@@ -4,7 +4,10 @@
 
 En el panel de Supabase abrí **SQL Editor**, creá una consulta nueva, pegá todo el contenido de `migrations/202609110001_init_catalog.sql` y ejecutala una sola vez. La migración crea el catálogo, las políticas RLS, el bucket público de imágenes y el juego inicial.
 
-Ejecutá también `migrations/202609120001_contact_messages.sql`. Esta segunda migración permite que el formulario de contacto funcione en Vercel.
+Ejecutá también, en este orden:
+
+1. `migrations/202609120001_contact_messages.sql`, para recibir y administrar los mensajes del formulario.
+2. `migrations/202609120002_site_members.sql`, para editar los perfiles e Instagram del equipo desde el dashboard.
 
 ## 2. Crear la cuenta administradora
 
@@ -36,5 +39,11 @@ El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
 - `PUBLIC_SUPABASE_URL`
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `PUBLIC_SITE_URL`
+
+Para recibir también cada mensaje por correo mediante Resend agregá:
+
+- `RESEND_API_KEY`
+- `CONTACT_TO_EMAIL` con `bzstudios.games@gmail.com`
+- `CONTACT_FROM_EMAIL` con una dirección de un dominio verificado
 
 La publishable key puede usarse en el navegador porque RLS protege los datos. Nunca agregues una `service_role` o secret key al proyecto web.

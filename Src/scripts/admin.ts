@@ -161,3 +161,67 @@ nameInput?.addEventListener('input', () => {
   const slug = form.elements.namedItem('slug') as HTMLInputElement;
   if (!id && slug) slug.value = slugify((form.elements.namedItem('name') as HTMLInputElement).value);
 });
+
+function instagramUrl(value: FormDataEntryValue | null) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const handle = raw
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+    .replace(/^@/, '')
+    .replace(/[/?#].*$/, '')
+    .trim();
+  if (!/^[a-zA-Z0-9._]{1,30}$/.test(handle)) throw new Error('Ingresá un usuario de Instagram válido.');
+  return `https://www.instagram.com/${handle}/`;
+}
+
+document.querySelectorAll<HTMLFormElement>('[data-member-form]').forEach((memberForm) => memberForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const submit = memberForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  submit?.setAttribute('disabled', '');
+  try {
+    const data = new FormData(memberForm);
+    const id = String(data.get('id') ?? '');
+    const name = String(data.get('name') ?? '').trim();
+    const role = String(data.get('role') ?? '').trim();
+    if (!id || name.length < 2 || role.length < 2) throw new Error('Completá el nombre y la descripción del integrante.');
+    const { error } = await supabase.from('site_members').update({
+      name,
+      role,
+      instagram_url: instagramUrl(data.get('instagram_url')),
+      is_visible: data.get('is_visible') === 'on',
+    }).eq('id', id);
+    if (error) throw error;
+    setMessage(`Perfil de ${name} actualizado.`);
+  } catch (error) {
+    setMessage(error instanceof Error ? error.message : 'No se pudo guardar el perfil.', 'error');
+  } finally {
+    submit?.removeAttribute('disabled');
+  }
+}));
+
+document.querySelectorAll<HTMLButtonElement>('[data-read-message]').forEach((button) => button.addEventListener('click', async () => {
+  button.disabled = true;
+  const { error } = await supabase.from('contact_messages').update({ is_read: true }).eq('id', button.dataset.readMessage);
+  if (error) {
+    setMessage(error.message, 'error');
+    button.disabled = false;
+    return;
+  }
+  const card = button.closest<HTMLElement>('[data-message-card]');
+  card?.classList.remove('is-unread');
+  button.remove();
+  setMessage('Mensaje marcado como leído.');
+}));
+
+document.querySelectorAll<HTMLButtonElement>('[data-delete-message]').forEach((button) => button.addEventListener('click', async () => {
+  if (!confirm('¿Eliminar definitivamente este mensaje?')) return;
+  button.disabled = true;
+  const { error } = await supabase.from('contact_messages').delete().eq('id', button.dataset.deleteMessage);
+  if (error) {
+    setMessage(error.message, 'error');
+    button.disabled = false;
+    return;
+  }
+  button.closest<HTMLElement>('[data-message-card]')?.remove();
+  setMessage('Mensaje eliminado.');
+}));

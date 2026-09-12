@@ -8,13 +8,18 @@ import { GAME_STATUSES } from '../../types/game';
 const session = await getAdminSession(Astro.request, Astro.cookies);
 if (!session.user || !session.isAdmin || !session.supabase) return Astro.redirect('/admin/login/');
 
-const { data: rawGames, error } = await session.supabase
-  .from('games')
-  .select('*, game_images(id, storage_path, kind, alt_text, sort_order)')
-  .order('created_at', { ascending: false });
+const supabase = session.supabase;
+const [gamesResult, membersResult, messagesResult] = await Promise.all([
+  supabase.from('games').select('*, game_images(id, storage_path, kind, alt_text, sort_order)').order('created_at', { ascending: false }),
+  supabase.from('site_members').select('id, name, role, instagram_url, sort_order, is_visible').order('sort_order', { ascending: true }),
+  supabase.from('contact_messages').select('id, name, email, category, message, is_read, created_at').order('created_at', { ascending: false }).limit(50),
+]);
 
-const games = rawGames ?? [];
-const publicMediaUrl = (path: string) => session.supabase!.storage.from('game-media').getPublicUrl(path).data.publicUrl;
+const games = gamesResult.data ?? [];
+const members = membersResult.data ?? [];
+const contactMessages = messagesResult.data ?? [];
+const unreadMessages = contactMessages.filter((item) => !item.is_read).length;
+const publicMediaUrl = (path: string) => supabase.storage.from('game-media').getPublicUrl(path).data.publicUrl;
 const serializedGames = games.map((game) => ({
   ...game,
   game_images: (game.game_images ?? []).map((image: Record<string, unknown>) => ({
@@ -22,73 +27,157 @@ const serializedGames = games.map((game) => ({
     public_url: publicMediaUrl(String(image.storage_path)),
   })),
 }));
+const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' });
 ---
 
-<AdminLayout title="Panel de juegos">
+<AdminLayout title="Dashboard">
   <header class="admin-topbar">
     <div class="admin-shell admin-topbar__inner">
       <a class="admin-brand" href="/admin/"><img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" /><span>Administración</span></a>
+      <nav class="admin-nav" aria-label="Secciones del panel">
+        <a href="#juegos">Juegos</a><a href="#equipo">Equipo</a><a href="#mensajes">Mensajes</a>
+      </nav>
       <div class="admin-user">
         <span>{session.user.email}</span>
-        <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio</a>
+        <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio ↗</a>
         <form method="post" action="/admin/logout/"><button class="button button--ghost button--small" type="submit">Salir</button></form>
       </div>
     </div>
   </header>
+
   <main class="admin-main">
     <div class="admin-shell">
       <div class="admin-heading">
-        <div><p class="kicker">Catálogo</p><h1>Panel de juegos</h1><p>Publicá, ocultá y actualizá el contenido sin tocar el código.</p></div>
-        <button class="button button--primary" type="button" data-new-game>Nuevo juego</button>
+        <div><p class="kicker">Control central</p><h1>Dashboard B&Z</h1><p>Gestioná el catálogo, el equipo y los mensajes desde un solo lugar.</p></div>
+        <button class="button button--primary" type="button" data-new-game>+ Nuevo juego</button>
       </div>
-      {error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {error.message}</p>}
+
+      <section class="admin-stats" aria-label="Resumen">
+        <article><span>Juegos</span><strong>{games.length}</strong><small>{games.filter((game) => game.is_visible).length} publicados</small></article>
+        <article><span>Equipo</span><strong>{members.length || 2}</strong><small>perfiles configurables</small></article>
+        <article><span>Mensajes nuevos</span><strong>{unreadMessages}</strong><small>{contactMessages.length} recibidos</small></article>
+      </section>
+
+      {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {gamesResult.error.message}</p>}
+      {membersResult.error && <p class="admin-message" data-kind="error">La sección Equipo necesita la nueva migración de Supabase.</p>}
+      {messagesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar la bandeja de mensajes: {messagesResult.error.message}</p>}
       <p class="admin-message" data-admin-message hidden aria-live="polite"></p>
-      <div class="admin-grid">
-        <section class="admin-panel">
-          <h2>Juegos ({games.length})</h2>
-          <div class="admin-game-list">
-            {serializedGames.length === 0 && <p>Todavía no hay juegos guardados.</p>}
-            {serializedGames.map((game) => (
-              <article class="admin-game">
-                <div class="admin-game__header"><div><h3>{game.name}</h3><p>/{game.slug} · {game.status} · {game.is_visible ? 'Visible' : 'Oculto'}</p></div><span class="status-badge"><span></span>{game.featured ? 'Destacado' : 'Catálogo'}</span></div>
-                <div class="admin-game__actions">
-                  <button class="button button--ghost button--small" type="button" data-edit-game={JSON.stringify(game)}>Editar</button>
-                  <button class="button button--ghost button--small" type="button" data-toggle-game={game.id} data-visible={String(game.is_visible)}>{game.is_visible ? 'Ocultar' : 'Publicar'}</button>
-                  <button class="button button--danger button--small" type="button" data-delete-game={game.id} data-game-name={game.name}>Eliminar</button>
+
+      <section class="admin-workspace" id="juegos">
+        <div class="admin-section-heading"><div><p class="kicker">Catálogo</p><h2>Juegos</h2></div><p>Creá fichas completas, subí portadas y decidí qué aparece en el sitio.</p></div>
+        <div class="admin-grid">
+          <section class="admin-panel admin-panel--list">
+            <div class="admin-panel__heading"><h3>Biblioteca</h3><span>{games.length} {games.length === 1 ? 'juego' : 'juegos'}</span></div>
+            <div class="admin-game-list">
+              {serializedGames.length === 0 && <div class="admin-empty"><strong>Sin juegos todavía</strong><p>Usá “Nuevo juego” para crear el primero.</p></div>}
+              {serializedGames.map((game) => (
+                <article class="admin-game">
+                  <div class="admin-game__header">
+                    <div><h4>{game.name}</h4><p>/{game.slug}</p></div>
+                    <span class:list={['admin-visibility', { 'is-live': game.is_visible }]}>{game.is_visible ? 'Visible' : 'Oculto'}</span>
+                  </div>
+                  <div class="admin-game__meta"><span>{game.status}</span><span>{game.featured ? '★ Destacado' : 'Catálogo'}</span></div>
+                  <div class="admin-game__actions">
+                    <button class="button button--ghost button--small" type="button" data-edit-game={JSON.stringify(game)}>Editar</button>
+                    <button class="button button--ghost button--small" type="button" data-toggle-game={game.id} data-visible={String(game.is_visible)}>{game.is_visible ? 'Ocultar' : 'Publicar'}</button>
+                    <button class="button button--danger button--small" type="button" data-delete-game={game.id} data-game-name={game.name}>Eliminar</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section class="admin-panel admin-panel--editor" id="editor">
+            <div class="admin-panel__heading"><div><span class="admin-step">Editor</span><h3 data-editor-title>Nuevo juego</h3></div><span>Los campos con * son obligatorios</span></div>
+            <form class="admin-form" data-game-form>
+              <input type="hidden" name="id" />
+              <fieldset class="admin-form-section">
+                <legend>Información principal</legend>
+                <div class="admin-form-grid">
+                  <div class="admin-field"><label for="name">Nombre *</label><input id="name" name="name" required /></div>
+                  <div class="admin-field"><label for="slug">Dirección (slug) *</label><input id="slug" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /><small>Ej.: monkey-climb-remastered</small></div>
+                  <div class="admin-field admin-field--full"><label for="short_description">Descripción breve *</label><textarea id="short_description" name="short_description" maxlength="240" rows="3" required></textarea><small>Máximo 240 caracteres.</small></div>
+                  <div class="admin-field admin-field--full"><label for="description">Descripción completa *</label><textarea id="description" name="description" rows="5" required></textarea></div>
                 </div>
-              </article>
+              </fieldset>
+
+              <fieldset class="admin-form-section">
+                <legend>Publicación y enlaces</legend>
+                <div class="admin-form-grid">
+                  <div class="admin-field"><label for="status">Estado *</label><select id="status" name="status" required>{GAME_STATUSES.map((status) => <option value={status}>{status}</option>)}</select></div>
+                  <div class="admin-field"><label for="published_at">Fecha de publicación</label><input id="published_at" name="published_at" type="date" /></div>
+                  <div class="admin-field"><label for="play_url">URL para jugar</label><input id="play_url" name="play_url" type="url" placeholder="https://" /></div>
+                  <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" placeholder="https://" /></div>
+                  <div class="admin-field"><label for="platforms">Plataformas</label><input id="platforms" name="platforms" placeholder="Web, Windows" /><small>Separadas por comas.</small></div>
+                  <div class="admin-field"><label for="genres">Géneros *</label><input id="genres" name="genres" placeholder="Arcade, Plataformas" required /><small>Separados por comas.</small></div>
+                </div>
+              </fieldset>
+
+              <fieldset class="admin-form-section">
+                <legend>Contenido del juego</legend>
+                <div class="admin-form-grid">
+                  <div class="admin-field"><label for="features">Características</label><textarea id="features" name="features" rows="5" placeholder="Una característica por línea"></textarea></div>
+                  <div class="admin-field"><label for="controls">Controles</label><textarea id="controls" name="controls" rows="5" placeholder="Espacio | Saltar&#10;Flechas | Moverse"></textarea></div>
+                  <div class="admin-field"><label for="seo_title">Título SEO</label><input id="seo_title" name="seo_title" /></div>
+                  <div class="admin-field"><label for="seo_description">Descripción SEO</label><input id="seo_description" name="seo_description" maxlength="160" /><small>Máximo 160 caracteres.</small></div>
+                </div>
+              </fieldset>
+
+              <fieldset class="admin-form-section">
+                <legend>Imágenes y visibilidad</legend>
+                <div class="admin-form-grid">
+                  <div class="admin-field admin-upload"><label for="cover">Portada</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg,image/webp,image/avif" /><small>PNG, JPG, WebP o AVIF. Máximo 8 MB.</small></div>
+                  <div class="admin-field admin-upload"><label for="screenshots">Capturas</label><input id="screenshots" name="screenshots" type="file" accept="image/png,image/jpeg,image/webp,image/avif" multiple /><small>Podés seleccionar varias.</small></div>
+                  <div class="admin-field admin-field--full admin-checks"><label><input name="featured" type="checkbox" /> <span><strong>Destacado</strong><small>Mostrar en la página de inicio.</small></span></label><label><input name="is_visible" type="checkbox" checked /> <span><strong>Visible</strong><small>Publicar en el catálogo.</small></span></label></div>
+                </div>
+              </fieldset>
+
+              <div class="admin-actions"><button class="button button--primary" type="submit">Guardar juego</button><button class="button button--ghost" type="reset" data-cancel-edit>Limpiar</button></div>
+            </form>
+            <div class="admin-current-media" data-current-media hidden><div class="admin-panel__heading"><h3>Imágenes actuales</h3></div><div class="admin-media" data-media-list></div></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="admin-workspace" id="equipo">
+        <div class="admin-section-heading"><div><p class="kicker">Sobre nosotros</p><h2>Equipo e Instagram</h2></div><p>Estos datos aparecen en las tarjetas públicas de cada integrante.</p></div>
+        {members.length > 0 ? (
+          <div class="admin-team-grid">
+            {members.map((member, index) => (
+              <form class="admin-panel admin-member-form" data-member-form>
+                <input type="hidden" name="id" value={member.id} />
+                <div class="admin-member-form__top"><span class="member-card__avatar" aria-hidden="true">{member.name.split(' ').map((part: string) => part[0]).join('')}</span><span class="admin-step">Perfil 0{index + 1}</span></div>
+                <div class="admin-field"><label for={`member-name-${member.id}`}>Nombre</label><input id={`member-name-${member.id}`} name="name" value={member.name} required /></div>
+                <div class="admin-field"><label for={`member-role-${member.id}`}>Rol o descripción</label><input id={`member-role-${member.id}`} name="role" value={member.role} required /></div>
+                <div class="admin-field"><label for={`member-instagram-${member.id}`}>Instagram</label><div class="admin-input-prefix"><span>@</span><input id={`member-instagram-${member.id}`} name="instagram_url" value={member.instagram_url?.replace(/^https:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '') ?? ''} placeholder="usuario" autocomplete="off" /></div><small>Podés pegar el usuario o el enlace completo.</small></div>
+                <label class="admin-inline-check"><input name="is_visible" type="checkbox" checked={member.is_visible} /> Mostrar integrante en el sitio</label>
+                <button class="button button--primary" type="submit">Guardar perfil</button>
+              </form>
             ))}
           </div>
-        </section>
+        ) : <div class="admin-empty admin-panel"><strong>Configuración pendiente</strong><p>Aplicá la migración de integrantes en Supabase para editar los perfiles desde aquí.</p></div>}
+      </section>
 
-        <section class="admin-panel" id="editor">
-          <h2 data-editor-title>Nuevo juego</h2>
-          <form class="admin-form" data-game-form>
-            <input type="hidden" name="id" />
-            <div class="admin-form-grid">
-              <div class="admin-field"><label for="name">Nombre *</label><input id="name" name="name" required /></div>
-              <div class="admin-field"><label for="slug">Slug *</label><input id="slug" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /><small>Ej.: monkey-climb-remastered</small></div>
-              <div class="admin-field admin-field--full"><label for="short_description">Descripción breve *</label><textarea id="short_description" name="short_description" maxlength="240" required></textarea></div>
-              <div class="admin-field admin-field--full"><label for="description">Descripción completa *</label><textarea id="description" name="description" required></textarea></div>
-              <div class="admin-field"><label for="play_url">URL para jugar</label><input id="play_url" name="play_url" type="url" /></div>
-              <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" /></div>
-              <div class="admin-field"><label for="status">Estado *</label><select id="status" name="status" required>{GAME_STATUSES.map((status) => <option value={status}>{status}</option>)}</select></div>
-              <div class="admin-field"><label for="published_at">Fecha de publicación</label><input id="published_at" name="published_at" type="date" /></div>
-              <div class="admin-field"><label for="platforms">Plataformas</label><input id="platforms" name="platforms" placeholder="Web, Windows" /></div>
-              <div class="admin-field"><label for="genres">Géneros *</label><input id="genres" name="genres" placeholder="Arcade, Plataformas" required /></div>
-              <div class="admin-field admin-field--full"><label for="features">Características</label><textarea id="features" name="features" placeholder="Una característica por línea"></textarea></div>
-              <div class="admin-field admin-field--full"><label for="controls">Controles</label><textarea id="controls" name="controls" placeholder="Espacio | Saltar&#10;Flechas | Moverse"></textarea></div>
-              <div class="admin-field"><label for="seo_title">Título SEO</label><input id="seo_title" name="seo_title" /></div>
-              <div class="admin-field"><label for="seo_description">Descripción SEO</label><input id="seo_description" name="seo_description" maxlength="160" /></div>
-              <div class="admin-field"><label for="cover">Portada</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg,image/webp,image/avif" /></div>
-              <div class="admin-field"><label for="screenshots">Capturas</label><input id="screenshots" name="screenshots" type="file" accept="image/png,image/jpeg,image/webp,image/avif" multiple /></div>
-              <div class="admin-field admin-field--full admin-checks"><label><input name="featured" type="checkbox" /> Destacado en inicio</label><label><input name="is_visible" type="checkbox" checked /> Visible públicamente</label></div>
-            </div>
-            <div class="admin-actions"><button class="button button--primary" type="submit">Guardar juego</button><button class="button button--ghost" type="reset" data-cancel-edit>Limpiar</button></div>
-          </form>
-          <div data-current-media hidden><h2>Imágenes actuales</h2><div class="admin-media" data-media-list></div></div>
-        </section>
-      </div>
+      <section class="admin-workspace" id="mensajes">
+        <div class="admin-section-heading"><div><p class="kicker">Contacto</p><h2>Bandeja de mensajes</h2></div><p>El formulario siempre guarda una copia aquí. Los nuevos mensajes también pueden notificarse por email.</p></div>
+        <div class="admin-inbox">
+          {contactMessages.length === 0 && <div class="admin-empty admin-panel"><strong>Bandeja vacía</strong><p>Los mensajes del formulario aparecerán acá.</p></div>}
+          {contactMessages.map((item) => (
+            <article class:list={['admin-message-card', { 'is-unread': !item.is_read }]} data-message-card={item.id}>
+              <div class="admin-message-card__head">
+                <div><span class="admin-message-card__category">{item.category}</span><h3>{item.name}</h3><a href={`mailto:${item.email}`}>{item.email}</a></div>
+                <time datetime={item.created_at}>{dateFormatter.format(new Date(item.created_at))}</time>
+              </div>
+              <p>{item.message}</p>
+              <div class="admin-game__actions">
+                {!item.is_read && <button class="button button--ghost button--small" type="button" data-read-message={item.id}>Marcar como leído</button>}
+                <a class="button button--ghost button--small" href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: ${item.category} — B&Z Studios`)}`}>Responder</a>
+                <button class="button button--danger button--small" type="button" data-delete-message={item.id}>Eliminar</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   </main>
   <script is:inline type="application/json" id="admin-games" set:html={JSON.stringify(serializedGames).replace(/</g, '\\u003c')} />
