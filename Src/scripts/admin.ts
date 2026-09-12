@@ -183,13 +183,16 @@ document.querySelectorAll<HTMLFormElement>('[data-member-form]').forEach((member
     const id = String(data.get('id') ?? '');
     const name = String(data.get('name') ?? '').trim();
     const role = String(data.get('role') ?? '').trim();
+    const sortOrder = Number(data.get('sort_order') ?? 0);
     if (!id || name.length < 2 || role.length < 2) throw new Error('Completá el nombre y la descripción del integrante.');
-    const { error } = await supabase.from('site_members').update({
+    const { error } = await supabase.from('site_members').upsert({
+      id,
       name,
       role,
       instagram_url: instagramUrl(data.get('instagram_url')),
+      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
       is_visible: data.get('is_visible') === 'on',
-    }).eq('id', id);
+    }, { onConflict: 'id' });
     if (error) throw error;
     setMessage(`Perfil de ${name} actualizado.`);
   } catch (error) {

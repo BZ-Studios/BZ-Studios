@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getAdminSession } from '../../lib/admin';
+import { fallbackMembers } from '../../lib/members';
 import { GAME_STATUSES } from '../../types/game';
 
 const session = await getAdminSession(Astro.request, Astro.cookies);
@@ -16,7 +17,20 @@ const [gamesResult, membersResult, messagesResult] = await Promise.all([
 ]);
 
 const games = gamesResult.data ?? [];
-const members = membersResult.data ?? [];
+const savedMembers = membersResult.data ?? [];
+const defaultMembers = fallbackMembers.map((member) => ({
+  id: member.id,
+  name: member.name,
+  role: member.role,
+  instagram_url: member.instagramUrl ?? null,
+  sort_order: member.sortOrder,
+  is_visible: member.isVisible,
+}));
+const defaultMemberIds = new Set(defaultMembers.map((member) => member.id));
+const members = [
+  ...defaultMembers.map((member) => savedMembers.find((saved) => saved.id === member.id) ?? member),
+  ...savedMembers.filter((member) => !defaultMemberIds.has(member.id)),
+].sort((a, b) => a.sort_order - b.sort_order);
 const contactMessages = messagesResult.data ?? [];
 const unreadMessages = contactMessages.filter((item) => !item.is_read).length;
 const publicMediaUrl = (path: string) => supabase.storage.from('game-media').getPublicUrl(path).data.publicUrl;
@@ -54,12 +68,12 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
 
       <section class="admin-stats" aria-label="Resumen">
         <article><span>Juegos</span><strong>{games.length}</strong><small>{games.filter((game) => game.is_visible).length} publicados</small></article>
-        <article><span>Equipo</span><strong>{members.length || 2}</strong><small>perfiles configurables</small></article>
+        <article><span>Equipo</span><strong>{members.length}</strong><small>perfiles configurables</small></article>
         <article><span>Mensajes nuevos</span><strong>{unreadMessages}</strong><small>{contactMessages.length} recibidos</small></article>
       </section>
 
       {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {gamesResult.error.message}</p>}
-      {membersResult.error && <p class="admin-message" data-kind="error">La sección Equipo necesita la nueva migración de Supabase.</p>}
+      {membersResult.error && <p class="admin-message" data-kind="error">Los perfiles se muestran con sus datos iniciales. Aplicá la migración de integrantes en Supabase para poder guardarlos.</p>}
       {messagesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar la bandeja de mensajes: {messagesResult.error.message}</p>}
       <p class="admin-message" data-admin-message hidden aria-live="polite"></p>
 
@@ -141,21 +155,20 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
 
       <section class="admin-workspace" id="equipo">
         <div class="admin-section-heading"><div><p class="kicker">Sobre nosotros</p><h2>Equipo e Instagram</h2></div><p>Estos datos aparecen en las tarjetas públicas de cada integrante.</p></div>
-        {members.length > 0 ? (
-          <div class="admin-team-grid">
-            {members.map((member, index) => (
-              <form class="admin-panel admin-member-form" data-member-form>
-                <input type="hidden" name="id" value={member.id} />
-                <div class="admin-member-form__top"><span class="member-card__avatar" aria-hidden="true">{member.name.split(' ').map((part: string) => part[0]).join('')}</span><span class="admin-step">Perfil 0{index + 1}</span></div>
-                <div class="admin-field"><label for={`member-name-${member.id}`}>Nombre</label><input id={`member-name-${member.id}`} name="name" value={member.name} required /></div>
-                <div class="admin-field"><label for={`member-role-${member.id}`}>Rol o descripción</label><input id={`member-role-${member.id}`} name="role" value={member.role} required /></div>
-                <div class="admin-field"><label for={`member-instagram-${member.id}`}>Instagram</label><div class="admin-input-prefix"><span>@</span><input id={`member-instagram-${member.id}`} name="instagram_url" value={member.instagram_url?.replace(/^https:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '') ?? ''} placeholder="usuario" autocomplete="off" /></div><small>Podés pegar el usuario o el enlace completo.</small></div>
-                <label class="admin-inline-check"><input name="is_visible" type="checkbox" checked={member.is_visible} /> Mostrar integrante en el sitio</label>
-                <button class="button button--primary" type="submit">Guardar perfil</button>
-              </form>
-            ))}
-          </div>
-        ) : <div class="admin-empty admin-panel"><strong>Configuración pendiente</strong><p>Aplicá la migración de integrantes en Supabase para editar los perfiles desde aquí.</p></div>}
+        <div class="admin-team-grid">
+          {members.map((member, index) => (
+            <form class="admin-panel admin-member-form" data-member-form>
+              <input type="hidden" name="id" value={member.id} />
+              <input type="hidden" name="sort_order" value={member.sort_order} />
+              <div class="admin-member-form__top"><span class="member-card__avatar" aria-hidden="true">{member.name.split(' ').map((part: string) => part[0]).join('')}</span><span class="admin-step">Perfil 0{index + 1}</span></div>
+              <div class="admin-field"><label for={`member-name-${member.id}`}>Nombre</label><input id={`member-name-${member.id}`} name="name" value={member.name} required /></div>
+              <div class="admin-field"><label for={`member-role-${member.id}`}>Rol o descripción</label><input id={`member-role-${member.id}`} name="role" value={member.role} required /></div>
+              <div class="admin-field"><label for={`member-instagram-${member.id}`}>Instagram</label><div class="admin-input-prefix"><span>@</span><input id={`member-instagram-${member.id}`} name="instagram_url" value={member.instagram_url?.replace(/^https:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '') ?? ''} placeholder="usuario o enlace de Instagram" autocomplete="off" inputmode="url" /></div><small>Podés pegar @usuario, el usuario solo o el enlace completo.</small></div>
+              <label class="admin-inline-check"><input name="is_visible" type="checkbox" checked={member.is_visible} /> Mostrar integrante en el sitio</label>
+              <button class="button button--primary" type="submit">Guardar perfil</button>
+            </form>
+          ))}
+        </div>
       </section>
 
       <section class="admin-workspace" id="mensajes">
