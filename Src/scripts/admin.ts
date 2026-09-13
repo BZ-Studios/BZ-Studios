@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from '../lib/supabase-browser';
+import { normalizeGameGenre } from '../config/gameGenres';
 
 type AdminImage = { id: string; storage_path: string; kind: 'cover' | 'banner' | 'screenshot'; alt_text: string | null; sort_order: number; public_url: string };
 type AdminGame = Record<string, unknown> & { id: string; name: string; slug: string; game_images: AdminImage[] };
@@ -9,6 +10,8 @@ const message = document.querySelector<HTMLElement>('[data-admin-message]');
 const mediaBox = document.querySelector<HTMLElement>('[data-current-media]');
 const mediaList = document.querySelector<HTMLElement>('[data-media-list]');
 const editorTitle = document.querySelector<HTMLElement>('[data-editor-title]');
+const editor = document.querySelector<HTMLElement>('[data-game-editor]');
+const gameWorkspace = document.querySelector<HTMLElement>('[data-game-workspace]');
 const gamesNode = document.querySelector<HTMLScriptElement>('#admin-games');
 const games: AdminGame[] = gamesNode?.textContent ? JSON.parse(gamesNode.textContent) : [];
 
@@ -33,6 +36,20 @@ function resetEditor() {
   if (editorTitle) editorTitle.textContent = 'Nuevo juego';
   if (mediaBox) mediaBox.hidden = true;
   if (mediaList) mediaList.innerHTML = '';
+}
+
+function openEditor() {
+  if (!editor) return;
+  editor.hidden = false;
+  gameWorkspace?.classList.add('is-editing');
+  requestAnimationFrame(() => editor.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
+function closeEditor() {
+  resetEditor();
+  if (editor) editor.hidden = true;
+  gameWorkspace?.classList.remove('is-editing');
+  document.querySelector<HTMLButtonElement>('[data-new-game]')?.focus();
 }
 
 function renderMedia(game: AdminGame) {
@@ -72,14 +89,14 @@ function editGame(game: AdminGame) {
   set('short_description', game.short_description); set('description', game.description);
   set('play_url', game.play_url); set('trailer_url', game.trailer_url); set('status', game.status);
   set('published_at', game.published_at); set('platforms', (game.platforms as string[] | null)?.join(', '));
-  set('genres', (game.genres as string[] | null)?.join(', ')); set('features', (game.features as string[] | null)?.join('\n'));
+  set('genre', normalizeGameGenre((game.genres as string[] | null)?.[0])); set('features', (game.features as string[] | null)?.join('\n'));
   set('controls', (game.controls as Array<{ input: string; action: string }> | null)?.map((control) => `${control.input} | ${control.action}`).join('\n'));
   set('seo_title', game.seo_title); set('seo_description', game.seo_description);
   (form.elements.namedItem('featured') as HTMLInputElement).checked = Boolean(game.featured);
   (form.elements.namedItem('is_visible') as HTMLInputElement).checked = Boolean(game.is_visible);
   if (editorTitle) editorTitle.textContent = `Editar: ${game.name}`;
   renderMedia(game);
-  document.querySelector('#editor')?.scrollIntoView({ behavior: 'smooth' });
+  openEditor();
 }
 
 async function uploadImages(gameId: string, files: File[], kind: 'cover' | 'screenshot', alt: string) {
@@ -117,7 +134,7 @@ form?.addEventListener('submit', async (event) => {
       name: String(data.get('name') ?? '').trim(), slug: slugify(String(data.get('slug') ?? '')),
       short_description: String(data.get('short_description') ?? '').trim(), description: String(data.get('description') ?? '').trim(),
       play_url: nullable(data.get('play_url')), trailer_url: nullable(data.get('trailer_url')), status: String(data.get('status')),
-      platforms: values(data.get('platforms')), genres: values(data.get('genres')), published_at: nullable(data.get('published_at')),
+      platforms: values(data.get('platforms')), genres: [String(data.get('genre') ?? '')].filter(Boolean), published_at: nullable(data.get('published_at')),
       featured: data.get('featured') === 'on', is_visible: data.get('is_visible') === 'on',
       seo_title: nullable(data.get('seo_title')), seo_description: nullable(data.get('seo_description')),
       features: String(data.get('features') ?? '').split('\n').map((item) => item.trim()).filter(Boolean), controls,
@@ -152,8 +169,9 @@ document.querySelectorAll<HTMLButtonElement>('[data-delete-game]').forEach((butt
   if (error) { setMessage(error.message, 'error'); button.disabled = false; } else location.reload();
 }));
 
-document.querySelector('[data-new-game]')?.addEventListener('click', () => { resetEditor(); document.querySelector('#editor')?.scrollIntoView({ behavior: 'smooth' }); });
-document.querySelector('[data-cancel-edit]')?.addEventListener('click', resetEditor);
+document.querySelector('[data-new-game]')?.addEventListener('click', () => { resetEditor(); openEditor(); });
+document.querySelector('[data-cancel-edit]')?.addEventListener('click', closeEditor);
+document.querySelector('[data-close-editor]')?.addEventListener('click', closeEditor);
 const nameInput = form?.elements.namedItem('name') as HTMLInputElement | null;
 nameInput?.addEventListener('input', () => {
   if (!form) return;

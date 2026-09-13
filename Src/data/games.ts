@@ -11,7 +11,7 @@ export const games: Game[] = [
     name: 'Monkey Climb Remastered',
     shortDescription: 'Nuestro primer juego ya está listo para jugar directamente desde el navegador.',
     description: 'El primer juego de B&Z Studios ya está disponible. Entrá a su sitio oficial y empezá la partida desde tu navegador.',
-    genres: ['Web'],
+    genres: ['Plataformas'],
     status: 'Disponible',
     playUrl: 'https://monkeyclimbremastered.com',
     featured: true,
@@ -21,8 +21,5 @@ export const games: Game[] = [
 ];
 
 export const featuredGames = games.filter((game) => game.featured);
-
-export const gameGenres = [...new Set(games.flatMap((game) => game.genres))]
-  .sort((a, b) => a.localeCompare(b, 'es'));
 
 export const getGameBySlug = (slug: string) => games.find((game) => game.slug === slug);

@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getAdminSession } from '../../lib/admin';
 import { fallbackMembers } from '../../lib/members';
+import { GAME_GENRES } from '../../config/gameGenres';
 import { GAME_STATUSES } from '../../types/game';
 
 const session = await getAdminSession(Astro.request, Astro.cookies);
@@ -79,7 +80,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
 
       <section class="admin-workspace" id="juegos">
         <div class="admin-section-heading"><div><p class="kicker">Catálogo</p><h2>Juegos</h2></div><p>Creá fichas completas, subí portadas y decidí qué aparece en el sitio.</p></div>
-        <div class="admin-grid">
+        <div class="admin-grid" data-game-workspace>
           <section class="admin-panel admin-panel--list">
             <div class="admin-panel__heading"><h3>Biblioteca</h3><span>{games.length} {games.length === 1 ? 'juego' : 'juegos'}</span></div>
             <div class="admin-game-list">
@@ -101,8 +102,11 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
             </div>
           </section>
 
-          <section class="admin-panel admin-panel--editor" id="editor">
-            <div class="admin-panel__heading"><div><span class="admin-step">Editor</span><h3 data-editor-title>Nuevo juego</h3></div><span>Los campos con * son obligatorios</span></div>
+          <section class="admin-panel admin-panel--editor" id="editor" data-game-editor hidden>
+            <div class="admin-panel__heading">
+              <div><span class="admin-step">Editor</span><h3 data-editor-title>Nuevo juego</h3></div>
+              <div class="admin-editor-meta"><span>Los campos con * son obligatorios</span><button type="button" data-close-editor aria-label="Cerrar editor">×</button></div>
+            </div>
             <form class="admin-form" data-game-form>
               <input type="hidden" name="id" />
               <fieldset class="admin-form-section">
@@ -123,7 +127,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
                   <div class="admin-field"><label for="play_url">URL para jugar</label><input id="play_url" name="play_url" type="url" placeholder="https://" /></div>
                   <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" placeholder="https://" /></div>
                   <div class="admin-field"><label for="platforms">Plataformas</label><input id="platforms" name="platforms" placeholder="Web, Windows" /><small>Separadas por comas.</small></div>
-                  <div class="admin-field"><label for="genres">Géneros *</label><input id="genres" name="genres" placeholder="Arcade, Plataformas" required /><small>Separados por comas.</small></div>
+                  <div class="admin-field"><label for="genre">Género *</label><select id="genre" name="genre" required><option value="">Elegí un género</option>{GAME_GENRES.map((genre) => <option value={genre}>{genre}</option>)}</select><small>Una categoría principal para ordenar el catálogo.</small></div>
                 </div>
               </fieldset>
 
@@ -146,7 +150,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
                 </div>
               </fieldset>
 
-              <div class="admin-actions"><button class="button button--primary" type="submit">Guardar juego</button><button class="button button--ghost" type="reset" data-cancel-edit>Limpiar</button></div>
+              <div class="admin-actions"><button class="button button--primary" type="submit">Guardar juego</button><button class="button button--ghost" type="button" data-cancel-edit>Cancelar</button></div>
             </form>
             <div class="admin-current-media" data-current-media hidden><div class="admin-panel__heading"><h3>Imágenes actuales</h3></div><div class="admin-media" data-media-list></div></div>
           </section>

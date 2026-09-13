@@ -1,5 +1,6 @@
 import type { Game, GameControl, GameStatus } from '../types/game';
 import { games as fallbackGames } from '../data/games';
+import { normalizeGameGenres } from '../config/gameGenres';
 import { createPublicClient } from './supabase';
 
 interface GameImageRow {
@@ -54,7 +55,7 @@ function mapGame(row: GameRow): Game {
     screenshots,
     trailerUrl: row.trailer_url ?? undefined,
     platforms: row.platforms ?? [],
-    genres: row.genres ?? [],
+    genres: normalizeGameGenres(row.genres),
     status: row.status,
     playUrl: row.play_url ?? undefined,
     controls: row.controls ?? [],

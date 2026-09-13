@@ -17,6 +17,7 @@ export const siteConfig = {
     discord: '',
     email: '',
   },
+  footerSocials: ['instagram', 'tiktok'],
 } as const;
 
 export type SocialKey = keyof typeof siteConfig.socialLinks;

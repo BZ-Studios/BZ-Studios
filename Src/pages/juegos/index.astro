@@ -2,10 +2,10 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GameCard from '../../components/GameCard.astro';
 import EmptyCatalog from '../../components/EmptyCatalog.astro';
+import { GAME_GENRES } from '../../config/gameGenres';
 import { getPublicGames } from '../../lib/games';
 
 const games = await getPublicGames();
-const gameGenres = [...new Set(games.flatMap((game) => game.genres))].sort((a, b) => a.localeCompare(b, 'es'));
 ---
 
 <BaseLayout title="Juegos" description="Explorá la cartelera de videojuegos de B&Z Studios.">
@@ -20,9 +20,14 @@ const gameGenres = [...new Set(games.flatMap((game) => game.genres))].sort((a, b
     <div class="shell">
       {games.length > 0 ? (
         <>
-          <div class="genre-filter" aria-label="Filtrar juegos por género">
-            <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">Todos</button>
-            {gameGenres.map((genre) => <button class="filter-button" type="button" data-filter={genre} aria-pressed="false">{genre}</button>)}
+          <div class="genre-filter">
+            <label for="genre-filter">Género</label>
+            <div class="genre-filter__control">
+              <select id="genre-filter" data-genre-filter aria-label="Filtrar juegos por género">
+                <option value="all">Todos</option>
+                {GAME_GENRES.map((genre) => <option value={genre}>{genre}</option>)}
+              </select>
+            </div>
           </div>
           <p class="filter-status" aria-live="polite">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
           <div class="game-grid" data-game-grid>{games.map((game) => <GameCard game={game} />)}</div>
@@ -34,16 +39,11 @@ const gameGenres = [...new Set(games.flatMap((game) => game.genres))].sort((a, b
 
 {games.length > 0 && (
   <script>
-    const buttons = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+    const select = document.querySelector<HTMLSelectElement>('[data-genre-filter]');
     const cards = document.querySelectorAll<HTMLElement>('[data-genre]');
     const status = document.querySelector<HTMLElement>('.filter-status');
-    buttons.forEach((button) => button.addEventListener('click', () => {
-      const filter = button.dataset.filter ?? 'all';
-      buttons.forEach((item) => {
-        const active = item === button;
-        item.classList.toggle('is-active', active);
-        item.setAttribute('aria-pressed', String(active));
-      });
+    select?.addEventListener('change', () => {
+      const filter = select.value;
       let visible = 0;
       cards.forEach((card) => {
         const match = filter === 'all' || (card.dataset.genre ?? '').split('|').includes(filter);
@@ -51,6 +51,6 @@ const gameGenres = [...new Set(games.flatMap((game) => game.genres))].sort((a, b
         if (match) visible += 1;
       });
       if (status) status.textContent = `${visible} ${visible === 1 ? 'juego' : 'juegos'}`;
-    }));
+    });
   </script>
 )}

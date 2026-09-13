@@ -9,7 +9,11 @@ const socialLabels: Record<SocialKey, string> = {
   discord: 'Discord',
   email: 'Email',
 };
-const socialEntries = Object.entries(siteConfig.socialLinks).filter(([, url]) => Boolean(url)) as [SocialKey, string][];
+const footerSocialEntries = siteConfig.footerSocials.map((key) => ({
+  key,
+  label: socialLabels[key],
+  url: siteConfig.socialLinks[key],
+}));
 ---
 
 <footer class="site-footer">
@@ -24,14 +28,16 @@ const socialEntries = Object.entries(siteConfig.socialLinks).filter(([, url]) =>
         {siteConfig.navigation.map((item) => <a href={item.href}>{item.label}</a>)}
       </nav>
     </div>
-    {socialEntries.length > 0 && (
-      <div>
-        <p class="footer-title">Encontranos</p>
-        <div class="footer-links">
-          {socialEntries.map(([key, url]) => <a href={url} target="_blank" rel="noreferrer">{socialLabels[key]}</a>)}
-        </div>
+    <div>
+      <p class="footer-title">Contacto</p>
+      <div class="footer-links">
+        {footerSocialEntries.map(({ label, url }) => url
+          ? <a href={url} target="_blank" rel="noreferrer">{label}</a>
+          : <span class="footer-link--pending">{label} <small>Próximamente</small></span>
+        )}
+        <a href="/contacto/">Escribinos</a>
       </div>
-    )}
+    </div>
   </div>
   <div class="shell footer-bottom">
     <span>© {new Date().getFullYear()} B&Z Studios</span>
