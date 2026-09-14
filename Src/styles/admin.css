@@ -16,9 +16,9 @@
 .admin-nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
 .admin-user { display: flex; align-items: center; gap: .65rem; color: var(--muted); font-size: .78rem; }
 .admin-user form { display: contents; }
-.admin-main { padding: 3.5rem 0 7rem; }
+.admin-main { padding: clamp(2.5rem,5vw,3.5rem) 0 clamp(4rem,8vw,7rem); }
 .admin-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 2rem; }
-.admin-heading h1 { font-size: clamp(3rem,6vw,5.6rem); background: var(--brand-gradient); background-clip: text; color: transparent; }
+.admin-heading h1 { font-size: clamp(2.8rem,5vw,4.8rem); background: var(--brand-gradient); background-clip: text; color: transparent; }
 .admin-heading p { max-width: 42rem; margin-bottom: 0; }
 .admin-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; margin-bottom: 2.5rem; }
 .admin-stats article { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: .2rem 1rem; padding: 1.25rem 1.4rem; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: linear-gradient(145deg,rgba(24,22,34,.92),rgba(12,11,18,.92)); box-shadow: 0 1.25rem 3rem rgba(0,0,0,.18); }
@@ -113,15 +113,22 @@
 .button--danger:hover { background: rgba(255,93,118,.14); }
 .button[disabled] { opacity: .55; cursor: wait; transform: none; }
 
-@media (max-width: 1120px) {
+@media (max-width: 1180px) {
   .admin-topbar__inner { flex-wrap: wrap; padding-block: .7rem; }
   .admin-nav { order: 3; width: 100%; }
   .admin-grid.is-editing { grid-template-columns: 1fr; }
-  .admin-panel--list { position: static; }
+  .admin-grid.is-editing .admin-panel--list { position: static; }
+}
+@media (max-width: 900px) {
+  .admin-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-stats article:last-child { grid-column: 1 / -1; }
+  .admin-section-heading { grid-template-columns: 1fr; gap: .5rem; }
+  .admin-team-grid { gap: .9rem; }
 }
 @media (max-width: 760px) {
+  .admin-topbar { position: static; }
   .admin-stats,.admin-team-grid { grid-template-columns: 1fr; }
-  .admin-section-heading { grid-template-columns: 1fr; gap: .5rem; }
+  .admin-stats article:last-child { grid-column: auto; }
   .admin-form-grid,.admin-media { grid-template-columns: 1fr; }
   .admin-field--full { grid-column: auto; }
   .admin-heading,.admin-topbar__inner,.admin-user { align-items: flex-start; flex-direction: column; }
@@ -131,4 +138,27 @@
   .admin-heading .button { width: 100%; }
   .admin-checks { grid-template-columns: 1fr; }
   .admin-message-card__head { flex-direction: column; gap: .5rem; }
+}
+@media (max-width: 520px) {
+  .admin-shell { width: min(calc(100% - 1rem),1440px); }
+  .admin-main { padding: 2rem 0 4rem; }
+  .admin-heading { gap: 1.25rem; margin-bottom: 1.5rem; }
+  .admin-heading h1 { font-size: clamp(2.5rem,14vw,3.5rem); }
+  .admin-workspace { padding: 2.25rem 0; }
+  .admin-section-heading h2 { font-size: clamp(2.35rem,12vw,3.25rem); }
+  .admin-panel { padding: .9rem; }
+  .admin-panel__heading { align-items: flex-start; flex-direction: column; }
+  .admin-editor-meta { width: 100%; justify-content: space-between; }
+  .admin-editor-meta > span { max-width: 14rem; }
+  .admin-game__header { flex-direction: column; }
+  .admin-game__actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-game__actions .button:last-child { grid-column: 1 / -1; }
+  .admin-form-section { padding: .85rem; }
+  .admin-actions { position: static; width: 100%; display: grid; grid-template-columns: 1fr; }
+  .admin-actions .button { width: 100%; }
+  .admin-media__row { align-items: stretch; flex-wrap: wrap; }
+  .admin-media__row input { flex: 1 1 4rem; }
+  .admin-message-card { padding: 1rem; }
+  .admin-login { padding: .75rem; }
+  .admin-login__card { padding: 1.25rem; }
 }
