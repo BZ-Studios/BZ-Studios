@@ -8,6 +8,7 @@ interface Props {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   noindex?: boolean;
   schema?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -16,34 +17,65 @@ const {
   title = siteConfig.name,
   description = siteConfig.description,
   image = '/brand/og-brand.webp',
+  imageAlt = 'B&Z Studios, estudio independiente de videojuegos',
   noindex = false,
   schema,
 } = Astro.props;
 
 const pageTitle = title === siteConfig.name ? title : `${title} | ${siteConfig.name}`;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const imageUrl = new URL(image, Astro.site ?? Astro.url.origin);
+const siteUrl = new URL('/', Astro.site ?? siteConfig.url);
+const canonical = new URL(Astro.url.pathname, siteUrl);
+const imageUrl = new URL(image, siteUrl);
+const sameAs = Object.values(siteConfig.socialLinks).filter(Boolean);
 const organizationSchema = {
-  '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': `${siteUrl.href}#organization`,
   name: siteConfig.name,
-  url: new URL('/', Astro.site ?? Astro.url.origin).href,
-  logo: new URL('/brand/logo-transparent.png', Astro.site ?? Astro.url.origin).href,
+  alternateName: siteConfig.shortName,
+  url: siteUrl.href,
+  description: siteConfig.description,
+  logo: new URL('/brand/logo-transparent.png', siteUrl).href,
   founder: siteConfig.members.map((name) => ({ '@type': 'Person', name })),
+  ...(sameAs.length > 0 ? { sameAs } : {}),
+};
+const websiteSchema = {
+  '@type': 'WebSite',
+  '@id': `${siteUrl.href}#website`,
+  url: siteUrl.href,
+  name: siteConfig.name,
+  alternateName: siteConfig.shortName,
+  description: siteConfig.description,
+  inLanguage: siteConfig.locale,
+  publisher: { '@id': `${siteUrl.href}#organization` },
+};
+const webPageSchema = {
+  '@type': 'WebPage',
+  '@id': `${canonical.href}#webpage`,
+  url: canonical.href,
+  name: pageTitle,
+  description,
+  inLanguage: siteConfig.locale,
+  isPartOf: { '@id': `${siteUrl.href}#website` },
+  about: { '@id': `${siteUrl.href}#organization` },
+};
+const baseSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [organizationSchema, websiteSchema, webPageSchema],
 };
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es-AR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="theme-color" content="#0b0710" />
     <meta name="description" content={description} />
+    <meta name="author" content={siteConfig.name} />
     <meta name="generator" content={Astro.generator} />
-    {noindex && <meta name="robots" content="noindex,follow" />}
+    <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/png" href="/brand/logo-transparent.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_AR" />
     <meta property="og:site_name" content={siteConfig.name} />
@@ -51,12 +83,14 @@ const organizationSchema = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAlt} />
     <title>{pageTitle}</title>
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(baseSchema)} />
     {schema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
   </head>
   <body>

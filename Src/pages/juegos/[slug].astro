@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GameCard from '../../components/GameCard.astro';
+import { siteConfig } from '../../config/site';
 import { getPublicGameBySlug, getPublicGames } from '../../lib/games';
 
 const game = await getPublicGameBySlug(Astro.params.slug ?? '');
@@ -8,18 +9,43 @@ if (!game) return Astro.redirect('/404/', 302);
 
 const games = await getPublicGames();
 const related = games.filter((item) => item.slug !== game.slug && item.genres.some((genre) => game.genres.includes(genre))).slice(0, 3);
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.url).href;
+const primaryGenre = game.genres[0]?.toLocaleLowerCase('es-AR');
+const genrePhrase = primaryGenre ? ` de ${primaryGenre}` : '';
+const canPlayOnline = Boolean(game.playUrl && game.status !== 'Próximamente');
+const defaultSeoTitle = `${game.name}: videojuego${genrePhrase}${canPlayOnline ? ' online' : ''}`;
+const supportingSeoText = game.shortDescription.trim().length >= 50
+  ? game.shortDescription.trim()
+  : canPlayOnline
+    ? 'Jugalo online directamente desde tu navegador.'
+    : 'Conocé su desarrollo, novedades y próximos lanzamientos.';
+const defaultSeoDescription = `${game.name} es un videojuego${genrePhrase} de B&Z Studios. ${supportingSeoText}`;
+const pageSeoTitle = game.seoTitle.trim().length >= game.name.length + 12 ? game.seoTitle : defaultSeoTitle;
+const pageSeoDescription = game.seoDescription.trim().length >= 110 ? game.seoDescription : defaultSeoDescription;
 const gameSchema = {
   '@context': 'https://schema.org',
   '@type': 'VideoGame',
   name: game.name,
-  description: game.seoDescription,
+  description: pageSeoDescription,
   ...(game.cover ? { image: new URL(game.cover, Astro.site ?? Astro.url.origin).href } : {}),
   genre: game.genres,
-  url: Astro.url.href,
+  url: canonicalUrl,
+  inLanguage: siteConfig.locale,
+  applicationCategory: 'Game',
+  gamePlatform: game.platforms?.length ? game.platforms : ['Web browser'],
+  publisher: { '@type': 'Organization', name: siteConfig.name, url: siteConfig.url },
+  creator: siteConfig.members.map((name) => ({ '@type': 'Person', name })),
+  ...(game.playUrl ? { potentialAction: { '@type': 'PlayAction', target: game.playUrl } } : {}),
 };
 ---
 
-<BaseLayout title={game.seoTitle} description={game.seoDescription} image={game.cover} schema={gameSchema}>
+<BaseLayout
+  title={pageSeoTitle}
+  description={pageSeoDescription}
+  image={game.cover}
+  imageAlt={game.cover ? `Portada de ${game.name}` : 'B&Z Studios, estudio independiente de videojuegos'}
+  schema={gameSchema}
+>
   <article>
     <header class="game-detail-hero">
       <div class="shell game-detail-hero__grid">

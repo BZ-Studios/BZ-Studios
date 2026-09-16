@@ -9,7 +9,10 @@ import { getPublicGames } from '../lib/games';
 const featuredGames = (await getPublicGames()).filter((game) => game.featured);
 ---
 
-<BaseLayout>
+<BaseLayout
+  title="Videojuegos independientes para jugar online"
+  description="Descubrí los videojuegos independientes de B&Z Studios: proyectos originales para jugar online desde el navegador y conocer nuestros próximos lanzamientos."
+>
   <section class="hero">
     <div class="hero-grid" aria-hidden="true"></div>
     <div class="hero-orb hero-orb--one" aria-hidden="true"></div>

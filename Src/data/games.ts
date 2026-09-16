@@ -15,8 +15,8 @@ export const games: Game[] = [
     status: 'Disponible',
     playUrl: 'https://monkeyclimbremastered.com',
     featured: true,
-    seoTitle: 'Monkey Climb Remastered',
-    seoDescription: 'Jugá Monkey Climb Remastered, el primer videojuego disponible de B&Z Studios.',
+    seoTitle: 'Monkey Climb Remastered: juego de plataformas online',
+    seoDescription: 'Jugá Monkey Climb Remastered online, el primer videojuego de plataformas de B&Z Studios disponible directamente desde el navegador.',
   },
 ];
 

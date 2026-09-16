@@ -28,7 +28,7 @@ async function notifyByEmail({ name, email, category, message }: { name: string;
       to: [to],
       reply_to: email,
       subject: `[Web B&Z] ${category} — ${name}`,
-      text: `Nuevo mensaje desde bz-studios.vercel.app\n\nNombre: ${name}\nEmail: ${email}\nCategoría: ${category}\n\nMensaje:\n${message}`,
+      text: `Nuevo mensaje desde bzstudios.com.ar\n\nNombre: ${name}\nEmail: ${email}\nCategoría: ${category}\n\nMensaje:\n${message}`,
       html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#17121d"><h1 style="font-size:22px">Nuevo mensaje desde B&amp;Z Studios</h1><p><strong>Nombre:</strong> ${escapeHtml(name)}<br><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a><br><strong>Categoría:</strong> ${escapeHtml(category)}</p><div style="padding:16px;border-left:4px solid #f329a8;background:#f8f4fa;white-space:pre-wrap">${escapeHtml(message)}</div></div>`,
     }),
   });

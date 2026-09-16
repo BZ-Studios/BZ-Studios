@@ -1,6 +1,9 @@
 export const siteConfig = {
   name: 'B&Z Studios',
-  description: 'Estudio independiente de videojuegos creado por Luis Zabala y Agustín Bustamante.',
+  shortName: 'B&Z',
+  url: 'https://bzstudios.com.ar',
+  locale: 'es-AR',
+  description: 'B&Z Studios es un estudio independiente de videojuegos de Argentina. Descubrí proyectos originales y juegos para disfrutar directamente desde el navegador.',
   navigation: [
     { label: 'Inicio', href: '/' },
     { label: 'Juegos', href: '/juegos/' },
