@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import Inbox from '../../components/admin/Inbox.astro';
 import { getAdminSession } from '../../lib/admin';
 import { fallbackMembers } from '../../lib/members';
 import { GAME_GENRES } from '../../config/gameGenres';
@@ -42,7 +43,6 @@ const serializedGames = games.map((game) => ({
     public_url: publicMediaUrl(String(image.storage_path)),
   })),
 }));
-const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' });
 ---
 
 <AdminLayout title="Dashboard">
@@ -70,7 +70,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
       <section class="admin-stats" aria-label="Resumen">
         <article><span>Juegos</span><strong>{games.length}</strong><small>{games.filter((game) => game.is_visible).length} publicados</small></article>
         <article><span>Equipo</span><strong>{members.length}</strong><small>perfiles configurables</small></article>
-        <article><span>Mensajes nuevos</span><strong>{unreadMessages}</strong><small>{contactMessages.length} recibidos</small></article>
+        <article><span>Mensajes nuevos</span><strong data-unread-count>{unreadMessages}</strong><small data-message-total>{contactMessages.length} en la bandeja</small></article>
       </section>
 
       {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {gamesResult.error.message}</p>}
@@ -176,24 +176,8 @@ const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', ti
       </section>
 
       <section class="admin-workspace" id="mensajes">
-        <div class="admin-section-heading"><div><p class="kicker">Contacto</p><h2>Bandeja de mensajes</h2></div><p>El formulario siempre guarda una copia aquí. Los nuevos mensajes también pueden notificarse por email.</p></div>
-        <div class="admin-inbox">
-          {contactMessages.length === 0 && <div class="admin-empty admin-panel"><strong>Bandeja vacía</strong><p>Los mensajes del formulario aparecerán acá.</p></div>}
-          {contactMessages.map((item) => (
-            <article class:list={['admin-message-card', { 'is-unread': !item.is_read }]} data-message-card={item.id}>
-              <div class="admin-message-card__head">
-                <div><span class="admin-message-card__category">{item.category}</span><h3>{item.name}</h3><a href={`mailto:${item.email}`}>{item.email}</a></div>
-                <time datetime={item.created_at}>{dateFormatter.format(new Date(item.created_at))}</time>
-              </div>
-              <p>{item.message}</p>
-              <div class="admin-game__actions">
-                {!item.is_read && <button class="button button--ghost button--small" type="button" data-read-message={item.id}>Marcar como leído</button>}
-                <a class="button button--ghost button--small" href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: ${item.category} — B&Z Studios`)}`}>Responder</a>
-                <button class="button button--danger button--small" type="button" data-delete-message={item.id}>Eliminar</button>
-              </div>
-            </article>
-          ))}
-        </div>
+        <div class="admin-section-heading"><div><p class="kicker">Contacto</p><h2>Bandeja de mensajes</h2></div><p>Últimas 50 consultas, de más reciente a más antigua. Abrí una para leerla completa y preparar una respuesta por correo.</p></div>
+        <Inbox messages={contactMessages} />
       </section>
     </div>
   </main>

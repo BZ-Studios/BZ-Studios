@@ -414,3 +414,43 @@ p { color: var(--muted); }
   html { scroll-behavior: auto; }
   *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Keep the brand close to the viewport edge, independently of content widths. */
+.nav.shell { width: calc(100% - clamp(1rem,3vw,3rem)); max-width: none; }
+.status-badge[data-status='Disponible'] > span { background: #52d68a; }
+
+/* A more compact About page without changing the hierarchy on other pages. */
+.page-hero--about { min-height: auto; padding: 6.75rem 0 2.5rem; }
+.page-hero--about h1 { max-width: 17ch; font-size: clamp(2.5rem,4.5vw,4rem); }
+.page-hero--about .lead { font-size: clamp(1rem,1.3vw,1.15rem); }
+.team-section { padding: clamp(2rem,4vw,3rem) 0; }
+.team-section .member-card { min-height: 16rem; padding: 1.3rem; grid-template-rows: 4rem auto; gap: 1rem; }
+.team-section .member-card__avatar { width: 4rem; height: 4rem; font-size: 1.6rem; }
+.team-section .member-card h2 { font-size: clamp(1.8rem,2.7vw,2.3rem); }
+.team-section .member-card__number { font-size: 3.5rem; }
+.manifesto { padding: clamp(2.5rem,4.5vw,4rem) 0; }
+.manifesto h2 { font-size: clamp(2.2rem,3.6vw,3.5rem); }
+.manifesto__grid { gap: 1.75rem; }
+@media (max-width: 720px) {
+  .page-hero--about { padding: 6rem 0 2rem; }
+  .page-hero--about h1 { font-size: clamp(2.35rem,8vw,3rem); }
+  .team-section .member-card { min-height: auto; }
+  .team-section .member-card h2 { font-size: clamp(1.8rem,6.8vw,2.3rem); }
+}
+
+/* Progressive enhancement: no router, animation library or render-blocking loader. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: page-out .16s ease-in both; }
+::view-transition-new(root) { animation: page-in .22s ease-out both; }
+@keyframes page-out { to { opacity: 0; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+.navigation-progress { position: fixed; inset: 0 0 auto; height: 3px; z-index: 100; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .15s; }
+.navigation-progress span { display: block; height: 100%; width: 45%; background: var(--brand-gradient); transform: translateX(-110%); }
+html[data-navigating] .navigation-progress { opacity: 1; }
+html[data-navigating] .navigation-progress span { animation: navigation-scan 1s ease-in-out infinite; }
+@keyframes navigation-scan { to { transform: translateX(330%); } }
+.contact-form button[aria-busy='true'] { cursor: wait; opacity: .8; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  html[data-navigating] .navigation-progress span { width: 100%; transform: none; animation: none; }
+}

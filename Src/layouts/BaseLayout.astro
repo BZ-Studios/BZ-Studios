@@ -75,8 +75,8 @@ const baseSchema = {
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="96x96" />
-    <link rel="icon" type="image/png" href="/favicon.png" sizes="96x96" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_AR" />
     <meta property="og:site_name" content={siteConfig.name} />
@@ -96,6 +96,7 @@ const baseSchema = {
   </head>
   <body>
     <Header />
+    <div class="navigation-progress" aria-hidden="true"><span></span></div>
     <main id="contenido"><slot /></main>
     <Footer />
 <script>
@@ -109,11 +110,28 @@ const baseSchema = {
         observer.unobserve(entry.target);
       });
     }, { threshold: 0.12 });
-    document.querySelectorAll('.section-heading, .member-card, .contact-aside, .help-cta, .next-level__inner').forEach((element) => observer.observe(element));
+    document.querySelectorAll('.section-heading, .game-card, .member-card, .studio-strip__grid, .manifesto__grid, .contact-aside, .contact-form, .help-cta, .next-level__inner').forEach((element) => observer.observe(element));
     motionPreference.addEventListener('change', () => {
       if (motionPreference.matches) observer.disconnect();
     });
   }
+  // Native navigation remains intact; the indicator never delays loading.
+  let progressTimeout: ReturnType<typeof setTimeout>;
+  const resetProgress = () => {
+    document.documentElement.removeAttribute('data-navigating');
+    clearTimeout(progressTimeout);
+  };
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+    if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    const destination = new URL(link.href, location.href);
+    if (destination.origin !== location.origin || (destination.pathname === location.pathname && destination.search === location.search)) return;
+    document.documentElement.setAttribute('data-navigating', '');
+    clearTimeout(progressTimeout);
+    progressTimeout = setTimeout(resetProgress, 8000);
+  });
+  window.addEventListener('pageshow', resetProgress);
 </script>
   </body>
 </html>

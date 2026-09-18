@@ -45,6 +45,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const params = new URLSearchParams(window.location.search);
   const status = document.querySelector<HTMLElement>('[data-form-status]');
   const error = document.querySelector<HTMLElement>('[data-form-error]');
+  const form = document.querySelector<HTMLFormElement>('.contact-form');
+  const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+  form?.addEventListener('submit', () => {
+    if (!submit) return;
+    submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
+    submit.textContent = 'Enviando…';
+  });
+  window.addEventListener('pageshow', () => {
+    if (!submit) return;
+    submit.disabled = false;
+    submit.removeAttribute('aria-busy');
+    submit.textContent = 'Enviar mensaje →';
+  });
   if (params.get('enviado') === '1' && status) {
     status.hidden = false;
     status.focus();

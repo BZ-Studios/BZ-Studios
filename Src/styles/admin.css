@@ -162,3 +162,34 @@
   .admin-login { padding: .75rem; }
   .admin-login__card { padding: 1.25rem; }
 }
+.inbox-toolbar { display: grid; grid-template-columns: minmax(0,1fr) minmax(10rem,.3fr); gap: 1rem; align-items: end; }
+.inbox-count { margin: .9rem 0; color: #aaa7b3; font-size: .875rem; }
+.admin-message-card:has(.inbox-detail) { padding: 0; }
+.inbox-detail summary { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem 1rem; padding: 1.2rem; cursor: pointer; list-style: none; }
+.inbox-detail summary::-webkit-details-marker { display: none; }
+.inbox-detail summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; border-radius: 12px; }
+.inbox-sender { min-width: 0; }
+.inbox-sender h3 { margin: .25rem 0; font-family: var(--font-body); font-size: 1.1rem; letter-spacing: 0; text-transform: none; overflow-wrap: anywhere; }
+.inbox-email { color: #b7b4c3; font-size: .875rem; overflow-wrap: anywhere; }
+.inbox-meta { display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; font-size: .8rem; color: #aaa7b3; }
+.inbox-read-state { padding: .15rem .55rem; border: 1px solid var(--line); border-radius: 5px; color: #aaa7b3; }
+.is-unread .inbox-read-state { background: rgba(243,41,168,.1); border-color: rgba(243,41,168,.4); color: #ff82c6; }
+.inbox-expand { color: var(--yellow); }
+.inbox-expand span { display: inline-block; transition: transform .2s; }
+.inbox-detail[open] .inbox-expand span { transform: rotate(180deg); }
+.inbox-preview { grid-column: 1 / -1; margin: 0; color: #c7c5cd; font-size: .95rem; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.inbox-detail[open] .inbox-preview { display: none; }
+.inbox-content { padding: 0 1.2rem 1.2rem; }
+.inbox-message { margin: 0 0 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; color: #e0dee8; font-size: 1rem; line-height: 1.65; }
+.inbox-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+.inbox-reply { margin-top: 1.25rem; padding: 1.1rem; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 8px; }
+.inbox-reply textarea { resize: vertical; min-height: 7rem; }
+.inbox-reply p { margin: .75rem 0 1rem; color: #aaa7b3; font-size: .875rem; line-height: 1.5; }
+@media (max-width: 600px) {
+  .inbox-toolbar { grid-template-columns: minmax(0,1fr); }
+  .inbox-detail summary { gap: .75rem; padding: 1rem; }
+  .inbox-meta { align-items: flex-start; grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+  .inbox-content { padding: 0 1rem 1rem; }
+  .inbox-reply { padding: .85rem; }
+  .inbox-reply .button { width: 100%; }
+}

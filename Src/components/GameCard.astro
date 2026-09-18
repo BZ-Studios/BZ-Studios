@@ -19,7 +19,7 @@ const monogram = game.name.split(/\s+/).map((word) => word[0]).join('').slice(0,
         <span class="game-card__launch">Primer lanzamiento</span>
       </div>
     )}
-    <span class="status-badge"><span aria-hidden="true"></span>{game.status}</span>
+    <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
   </a>
   <div class="game-card__body">
     <div class="game-card__genres">{game.genres.join(' · ')}</div>

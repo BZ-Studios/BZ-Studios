@@ -1,0 +1,46 @@
+---
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  category: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+interface Props { messages: ContactMessage[] }
+const { messages } = Astro.props;
+const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' });
+---
+
+<div class="inbox-toolbar">
+  <div class="admin-field"><label for="inbox-search">Buscar mensajes</label><input id="inbox-search" type="search" placeholder="Nombre, email, categoría o mensaje" data-inbox-search /></div>
+  <div class="admin-field"><label for="inbox-filter">Mostrar</label><select id="inbox-filter" data-inbox-filter><option value="all">Todos</option><option value="unread">Sin leer</option><option value="read">Leídos</option></select></div>
+</div>
+<p class="inbox-count" data-inbox-count aria-live="polite">{messages.length} mensajes · {messages.filter((item) => !item.is_read).length} sin leer</p>
+<div class="admin-inbox" data-inbox>
+  <div class="admin-empty admin-panel" data-inbox-empty hidden={messages.length > 0}><strong>Sin mensajes para mostrar</strong><p>Probá otra búsqueda o filtro. Las consultas del formulario aparecen aquí.</p></div>
+  {messages.map((item) => (
+    <article class:list={['admin-message-card', { 'is-unread': !item.is_read }]} data-message-card={item.id} data-read={String(item.is_read)} data-search={`${item.name} ${item.email} ${item.category} ${item.message}`}>
+      <details class="inbox-detail">
+        <summary>
+          <div class="inbox-sender"><span class="admin-message-card__category">{item.category}</span><h3>{item.name}</h3><span class="inbox-email">{item.email}</span></div>
+          <div class="inbox-meta"><span class="inbox-read-state" data-read-state>{item.is_read ? 'Leído' : 'Nuevo'}</span><time datetime={item.created_at}>{dateFormatter.format(new Date(item.created_at))}</time><span class="inbox-expand">Leer / responder <span aria-hidden="true">⌄</span></span></div>
+          <p class="inbox-preview">{item.message}</p>
+        </summary>
+        <div class="inbox-content">
+          <p class="inbox-message">{item.message}</p>
+          <div class="inbox-actions">
+            {!item.is_read && <button class="button button--ghost button--small" type="button" data-read-message={item.id}>Marcar como leído</button>}
+            <button class="button button--danger button--small" type="button" data-delete-message={item.id}>Eliminar mensaje</button>
+          </div>
+          <div class="inbox-reply">
+            <div class="admin-field"><label for={`reply-${item.id}`}>Tu respuesta a {item.name}</label><textarea id={`reply-${item.id}`} rows="4" placeholder="Escribí tu respuesta…" data-reply-draft aria-describedby={`reply-hint-${item.id}`} /></div>
+            <p id={`reply-hint-${item.id}`}>Se abrirá tu aplicación de correo: revisá y enviá la respuesta allí. El panel no envía ni guarda este borrador.</p>
+            <a class="button button--primary button--small" data-reply-link data-reply-email={item.email} data-reply-subject={`Re: ${item.category} — B&Z Studios`} href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: ${item.category} — B&Z Studios`)}`}>Abrir correo con respuesta ↗</a>
+          </div>
+        </div>
+      </details>
+    </article>
+  ))}
+</div>

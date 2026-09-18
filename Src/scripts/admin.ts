@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from '../lib/supabase-browser';
 import { normalizeGameGenre } from '../config/gameGenres';
+import { refreshInbox } from './inbox';
 
 type AdminImage = { id: string; storage_path: string; kind: 'cover' | 'banner' | 'screenshot'; alt_text: string | null; sort_order: number; public_url: string };
 type AdminGame = Record<string, unknown> & { id: string; name: string; slug: string; game_images: AdminImage[] };
@@ -230,7 +231,13 @@ document.querySelectorAll<HTMLButtonElement>('[data-read-message]').forEach((but
   }
   const card = button.closest<HTMLElement>('[data-message-card]');
   card?.classList.remove('is-unread');
+  if (card) {
+    card.dataset.read = 'true';
+    const state = card.querySelector('[data-read-state]');
+    if (state) state.textContent = 'Leído';
+  }
   button.remove();
+  refreshInbox();
   setMessage('Mensaje marcado como leído.');
 }));
 
@@ -244,5 +251,6 @@ document.querySelectorAll<HTMLButtonElement>('[data-delete-message]').forEach((b
     return;
   }
   button.closest<HTMLElement>('[data-message-card]')?.remove();
+  refreshInbox();
   setMessage('Mensaje eliminado.');
 }));
