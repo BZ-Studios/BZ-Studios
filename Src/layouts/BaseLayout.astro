@@ -98,5 +98,22 @@ const baseSchema = {
     <Header />
     <main id="contenido"><slot /></main>
     <Footer />
+<script>
+  // One observer, no scroll listeners; content stays visible without JavaScript.
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (!motionPreference.matches && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('motion-reveal');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.section-heading, .member-card, .contact-aside, .help-cta, .next-level__inner').forEach((element) => observer.observe(element));
+    motionPreference.addEventListener('change', () => {
+      if (motionPreference.matches) observer.disconnect();
+    });
+  }
+</script>
   </body>
 </html>

@@ -11,13 +11,16 @@ const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.st
     <a class="brand" href="/" aria-label="B&Z Studios, inicio">
       <img src="/brand/logo-transparent.png" alt="" width="1672" height="941" />
     </a>
-    <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-menu">
+    <button class="menu-button" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-menu">
       <span class="menu-button__label">Menú</span>
       <span class="menu-button__icon" aria-hidden="true"><i></i><i></i><i></i></span>
     </button>
     <div class="nav-links" id="main-menu" data-menu>
-      {siteConfig.navigation.map((item) => (
-        <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+      {siteConfig.navigation.map((item, index) => (
+        <a href={item.href} style={`--menu-index: ${index}`} aria-current={isActive(item.href) ? 'page' : undefined}>
+          <span class="nav-link__number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          {item.label}
+        </a>
       ))}
     </div>
   </nav>
@@ -29,6 +32,7 @@ const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.st
 
   const closeMenu = () => {
     button?.setAttribute('aria-expanded', 'false');
+    button?.setAttribute('aria-label', 'Abrir menú');
     menu?.removeAttribute('data-open');
     document.documentElement.removeAttribute('data-menu-open');
   };
@@ -36,15 +40,23 @@ const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.st
   button?.addEventListener('click', () => {
     const open = button.getAttribute('aria-expanded') === 'true';
     button.setAttribute('aria-expanded', String(!open));
+    button.setAttribute('aria-label', open ? 'Abrir menú' : 'Cerrar menú');
     menu?.toggleAttribute('data-open', !open);
     document.documentElement.toggleAttribute('data-menu-open', !open);
   });
 
   menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && button?.getAttribute('aria-expanded') === 'true') {
       closeMenu();
       button?.focus();
     }
   });
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Node && !menu?.contains(event.target) && !button?.contains(event.target)) closeMenu();
+  });
+  document.querySelector('[data-header]')?.addEventListener('focusout', (event) => {
+    if (event instanceof FocusEvent && event.relatedTarget instanceof Node && !document.querySelector('[data-header]')?.contains(event.relatedTarget)) closeMenu();
+  });
+  window.matchMedia('(min-width: 901px)').addEventListener('change', closeMenu);
 </script>
