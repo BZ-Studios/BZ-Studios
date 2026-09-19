@@ -1,0 +1,10 @@
+---
+interface Props { average?: number; count?: number; compact?: boolean }
+const { average, count = 0, compact = false } = Astro.props;
+const label = count > 0 && average ? `${average.toFixed(1).replace('.', ',')} de 5, ${count} ${count === 1 ? 'calificación' : 'calificaciones'}` : 'Sin calificaciones';
+---
+<div class:list={['rating-summary', { 'rating-summary--compact': compact }]} aria-label={label}>
+  <span class="rating-stars" aria-hidden="true">★★★★★<i style={`width:${average ? (average / 5) * 100 : 0}%`}>★★★★★</i></span>
+  {count > 0 && average ? <strong>{average.toFixed(1).replace('.', ',')}</strong> : <span>Sin calificaciones</span>}
+  {count > 0 && <small>{count} {count === 1 ? 'calificación' : 'calificaciones'}</small>}
+</div>

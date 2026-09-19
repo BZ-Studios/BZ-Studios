@@ -1,8 +1,10 @@
 ---
 import { siteConfig } from '../config/site';
+import { getAccount } from '../lib/account';
 
 const pathname = Astro.url.pathname;
 const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
+const { user } = await getAccount(Astro.request, Astro.cookies);
 ---
 
 <header class="site-header" data-header>
@@ -22,6 +24,9 @@ const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.st
           {item.label}
         </a>
       ))}
+      <div class="account-nav">
+        {user ? <><a href="/cuenta/perfil/" aria-current={pathname.startsWith('/cuenta/perfil') ? 'page' : undefined}>Mi perfil</a><form method="post" action="/cuenta/logout/"><button type="submit">Salir</button></form></> : <><a href={`/cuenta/login/?next=${encodeURIComponent(pathname)}`}>Ingresar</a><a class="account-nav__signup" href={`/cuenta/registro/?next=${encodeURIComponent(pathname)}`}>Crear cuenta</a></>}
+      </div>
     </div>
   </nav>
 </header>

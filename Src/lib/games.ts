@@ -67,6 +67,15 @@ function mapGame(row: GameRow): Game {
   };
 }
 
+async function addRatings(games: Game[], client: NonNullable<ReturnType<typeof createPublicClient>>) {
+  const { data } = await client.from('game_rating_stats').select('game_id, average_score, rating_count');
+  const ratings = new Map((data ?? []).map((row) => [row.game_id, row]));
+  return games.map((game) => {
+    const rating = ratings.get(game.id);
+    return { ...game, ratingAverage: rating ? Number(rating.average_score) : undefined, ratingCount: rating ? Number(rating.rating_count) : 0 };
+  });
+}
+
 const gameSelect = `
   id, slug, name, short_description, description, play_url, trailer_url,
   status, platforms, genres, published_at, featured, is_visible,
@@ -86,7 +95,7 @@ export async function getPublicGames(): Promise<Game[]> {
     .order('published_at', { ascending: false, nullsFirst: false });
 
   if (error || !data) return fallbackGames;
-  return (data as unknown as GameRow[]).map(mapGame);
+  return addRatings((data as unknown as GameRow[]).map(mapGame), client);
 }
 
 export async function getPublicGameBySlug(slug: string): Promise<Game | undefined> {

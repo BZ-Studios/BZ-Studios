@@ -1,0 +1,8 @@
+---
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { getAccount, sameOrigin, validPassword } from '../../lib/account';
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies); let error = '', changed = false;
+if (!user && Astro.request.method !== 'POST') return Astro.redirect('/cuenta/recuperar/');
+if (Astro.request.method === 'POST') { const form = await Astro.request.formData(); const password=String(form.get('password')??''), confirmation=String(form.get('confirmation')??''); if(!sameOrigin(Astro.request)) error='Solicitud no válida.'; else if(!validPassword(password)) error='Usá 10 caracteres, mayúscula, minúscula y número.'; else if(password!==confirmation) error='Las contraseñas no coinciden.'; else { const result=await supabase?.auth.updateUser({password}); error=result?.error?.message??''; changed=!error; } }
+---
+<AccountLayout title="Nueva contraseña"><form class="account-form" method="post">{error && <p class="form-status is-error" role="alert">{error}</p>}{changed ? <div class="account-notice"><strong>Contraseña actualizada</strong><p>Ya podés continuar usando tu cuenta.</p><a class="button button--primary" href="/cuenta/perfil/">Ir a mi perfil</a></div> : <><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="10" required /></label><label>Confirmar contraseña<input name="confirmation" type="password" autocomplete="new-password" required /></label><button class="button button--primary" type="submit">Actualizar contraseña</button></>}</form></AccountLayout>

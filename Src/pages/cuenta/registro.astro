@@ -1,0 +1,28 @@
+---
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { getAccount, safeNext, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
+const next = safeNext(Astro.url.searchParams.get('next'));
+if (user) return Astro.redirect(next);
+let error = '', sent = false;
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const username = String(form.get('username') ?? '').trim(), email = String(form.get('email') ?? '').trim(), password = String(form.get('password') ?? ''), confirmation = String(form.get('confirmation') ?? '');
+  if (!sameOrigin(Astro.request) || form.get('website')) error = 'No pudimos procesar el registro.';
+  else if (!usernamePattern.test(username)) error = 'El usuario debe tener entre 3 y 24 letras, números o guiones bajos.';
+  else if (!validPassword(password)) error = 'La contraseña debe tener 10 caracteres, mayúscula, minúscula y número.';
+  else if (password !== confirmation) error = 'Las contraseñas no coinciden.';
+  else if (form.get('terms') !== 'on') error = 'Debés aceptar los términos y la política de privacidad.';
+  else if (!supabase) error = 'El servicio de cuentas no está disponible en este momento.';
+  else {
+    const available = await supabase.rpc('username_available', { candidate: username });
+    if (!available.data) error = 'Ese nombre de usuario no está disponible.';
+    else {
+      const result = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${Astro.url.origin}/cuenta/callback/?next=${encodeURIComponent(next)}`, data: { username, terms_accepted_at: new Date().toISOString() } } });
+      if (result.error) error = result.error.message.includes('rate') ? 'Demasiados intentos. Esperá unos minutos.' : 'No pudimos crear la cuenta. Revisá los datos e intentá nuevamente.';
+      else sent = true;
+    }
+  }
+}
+---
+<AccountLayout title="Crear cuenta"><form class="account-form" method="post"><input class="hp-field" name="website" tabindex="-1" autocomplete="off" />{error && <p class="form-status is-error" role="alert">{error}</p>}{sent && <div class="account-notice" role="status"><strong>Revisá tu correo</strong><p>Te enviamos un enlace de confirmación. Abrilo para activar tu cuenta; después podrás iniciar sesión y calificar juegos.</p></div>}{!sent && <><label>Nombre de usuario<input name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required /><small>3 a 24 letras, números o guiones bajos.</small></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required /></label><label>Contraseña<input name="password" type="password" autocomplete="new-password" minlength="10" required /><small>10 caracteres, mayúscula, minúscula y número.</small></label><label>Confirmar contraseña<input name="confirmation" type="password" autocomplete="new-password" required /></label><label class="account-check"><input name="terms" type="checkbox" required /><span>Acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">política de privacidad</a>.</span></label><button class="button button--primary" type="submit">Crear cuenta</button></>}</form></AccountLayout>

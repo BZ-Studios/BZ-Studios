@@ -370,6 +370,70 @@ p { color: var(--muted); }
   .control-list dt { padding-bottom: .25rem; border-bottom: 0; }
   .control-list dd { padding-top: .25rem; }
 }
+
+/* Accounts and ratings share the existing neon visual language. */
+.account-nav { display: flex; align-items: center; gap: .65rem; margin-left: .35rem; padding-left: 1rem; border-left: 1px solid var(--line); }
+.account-nav form { display: contents; }
+.account-nav button { border: 0; background: transparent; color: #d8d7dd; font-weight: 750; font-size: .85rem; cursor: pointer; }
+.account-nav__signup { padding: .45rem .7rem; border: 1px solid rgba(243,41,168,.5); border-radius: 5px; background: rgba(243,41,168,.08); }
+.account-page { min-height: 75svh; padding: 7.5rem 0 5rem; }
+.account-shell { width: min(calc(100% - 2rem),48rem); }
+.account-heading { margin-bottom: 1.3rem; }
+.account-heading h1 { font-size: clamp(2.5rem,6vw,4.5rem); }
+.account-card { padding: clamp(1rem,4vw,2rem); border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(145deg,rgba(23,18,30,.97),rgba(8,6,12,.98)); box-shadow: 0 2rem 5rem rgba(0,0,0,.28); }
+.account-form { display: grid; gap: 1rem; }
+.account-form > label:not(.account-check) { display: grid; gap: .4rem; color: #f3f2f6; font-size: .85rem; font-weight: 800; }
+.account-form input:not([type='checkbox']) { width: 100%; min-height: 3.15rem; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 7px; background: #09080e; color: #fff; }
+.account-form input:focus { border-color: var(--pink); outline: 3px solid rgba(243,41,168,.15); }
+.account-form small { color: var(--muted); font-weight: 400; }
+.account-check { display: flex; align-items: flex-start; gap: .65rem; color: var(--muted); font-size: .85rem; }
+.account-check input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; accent-color: var(--pink); }
+.account-check span { line-height: 1.55; }
+.hp-field { position: absolute !important; left: -9999px !important; }
+.account-notice,.form-status { padding: 1rem; border: 1px solid #52d68a; border-radius: 7px; background: rgba(82,214,138,.08); color: #eafff2; }
+.form-status.is-error { border-color: var(--warm); background: rgba(255,93,118,.08); }
+.profile-stack { display: grid; gap: 2rem; }
+.profile-stack section + section { padding-top: 2rem; border-top: 1px solid var(--line); }
+.profile-stack h2,.legal-copy h2 { margin-bottom: 1rem; font-family: var(--font-body); font-size: 1.25rem; letter-spacing: 0; text-transform: none; }
+.profile-ratings { display: grid; gap: .65rem; }
+.profile-ratings article { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .85rem; border: 1px solid var(--line); border-radius: 7px; }
+.profile-ratings article > div { display: grid; gap: .25rem; }
+.profile-ratings article span { color: var(--yellow); letter-spacing: .08em; }
+.danger-zone { border-color: rgba(255,93,118,.35) !important; }
+.legal-copy { line-height: 1.75; }
+.rating-section { padding: 2.5rem 0; background: rgba(8,5,12,.7); border-block: 1px solid var(--line); }
+.game-rating { display: grid; grid-template-columns: minmax(0,1fr) minmax(18rem,.75fr); align-items: center; gap: 2rem; }
+.game-rating h2 { font-size: clamp(2.2rem,4vw,3.5rem); }
+.rating-summary { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin-top: .9rem; color: var(--muted); }
+.rating-summary strong { color: #fff; font-size: 1.35rem; }
+.rating-summary small { flex-basis: 100%; }
+.rating-summary--compact { margin-top: .7rem; gap: .4rem; font-size: .78rem; }
+.rating-summary--compact strong { font-size: .85rem; }
+.rating-summary--compact small { flex-basis: auto; }
+.rating-stars { position: relative; display: inline-block; color: rgba(255,255,255,.16); letter-spacing: .08em; line-height: 1; }
+.rating-stars i { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: var(--yellow); font-style: normal; white-space: nowrap; }
+.rating-vote { padding: 1.2rem; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.025); }
+.rating-vote > p { margin-top: 0; }
+.rating-buttons { display: flex; gap: .25rem; }
+.rating-buttons button { width: 3rem; height: 3rem; border: 1px solid var(--line); border-radius: 6px; background: #0b0910; color: #5c5865; font-size: 1.6rem; cursor: pointer; transition: color .15s,transform .15s,border-color .15s; }
+.rating-buttons button:hover,.rating-buttons button:focus-visible,.rating-buttons button.is-selected { color: var(--yellow); border-color: rgba(255,193,61,.55); transform: translateY(-2px); }
+.rating-buttons button:disabled { cursor: wait; opacity: .55; }
+.rating-delete { margin-top: .9rem; border: 0; background: transparent; cursor: pointer; }
+.rating-feedback { min-height: 1.5rem; margin: .7rem 0 0; font-size: .85rem; }
+.rating-gate { margin-top: 1rem; padding: .85rem; border: 1px solid var(--line); border-radius: 7px; background: rgba(0,0,0,.25); }
+@media (max-width: 1100px) and (min-width: 901px) { .nav-links { gap: .8rem; } .account-nav { padding-left: .6rem; gap: .4rem; } }
+@media (max-width: 900px) {
+  .account-nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin: .35rem 0 0; padding: .65rem 0 0; border-left: 0; border-top: 1px solid var(--line); }
+  .account-nav a,.account-nav button { min-height: 2.75rem; display: flex; align-items: center; justify-content: center; padding: .6rem; border-radius: 5px; background: rgba(255,255,255,.035); font-size: .875rem; text-align: center; }
+  .game-rating { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 520px) {
+  .account-page { padding: 6rem 0 3rem; }
+  .account-shell { width: min(calc(100% - 1rem),48rem); }
+  .profile-ratings article { align-items: flex-start; flex-direction: column; }
+  .rating-buttons button { width: min(3rem,17vw); height: min(3rem,17vw); }
+}
+@media (prefers-reduced-motion: reduce) { .rating-buttons button { transform: none !important; } }
 @media (max-width: 360px) {
   .menu-button__label { display: none; }
   .hero h1,.page-hero h1,.page-hero--catalog h1 { font-size: 2.3rem; }

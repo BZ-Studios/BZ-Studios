@@ -1,6 +1,7 @@
 # B&Z Studios
 
 Sitio oficial construido con Astro, TypeScript, CSS y Supabase. Incluye catálogo dinámico y panel privado de administración.
+También incluye cuentas verificadas, perfil, recuperación de contraseña y calificaciones de 1 a 5 estrellas protegidas con RLS.
 
 ## Desarrollo local
 
@@ -19,6 +20,7 @@ Validación de producción: `npm run build`.
 - `Src/data/games.ts`: catálogo de respaldo mientras Supabase no está inicializado.
 - `Src/lib/`: conexión pública/SSR y consultas del catálogo.
 - `Src/pages/admin/`: acceso privado, catálogo, perfiles del equipo y bandeja de mensajes.
+- `Src/pages/cuenta/`: registro, acceso, recuperación, perfil y eliminación de cuenta.
 - `supabase/`: migración SQL e instrucciones de configuración.
 - `Src/types/game.ts`: modelo de datos y estados válidos.
 - `Src/config/site.ts`: navegación, integrantes y redes sociales.
@@ -31,7 +33,7 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 
 ## Gestionar juegos
 
-1. Aplicá las migraciones y autorizá una cuenta siguiendo `supabase/README.md`.
+1. Aplicá las migraciones y autorizá una cuenta administradora siguiendo `supabase/README.md`.
 2. Iniciá el proyecto y abrí `http://localhost:4321/admin/`.
 3. Desde el panel podés crear, editar, ocultar, destacar o eliminar juegos, y subir portada y capturas.
 
@@ -46,7 +48,7 @@ La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se
 
 ## Supabase
 
-Copiá `.env.example` como `.env` y completá las variables públicas. El `.env` está ignorado por Git. Las políticas RLS restringen las escrituras a los usuarios listados en `public.admins`; el frontend nunca usa claves secretas.
+Copiá `.env.example` como `.env` y completá las variables. El `.env` está ignorado por Git. Las políticas RLS protegen catálogo, perfiles y calificaciones; el frontend nunca recibe claves privadas. Ejecutá las migraciones en orden y seguí `supabase/README.md` para las URLs de correo y CAPTCHA.
 
 ## Contacto
 
@@ -54,7 +56,7 @@ El formulario valida los campos en el servidor y guarda siempre los mensajes en 
 
 ## Despliegue
 
-El proyecto usa el adaptador oficial de Vercel para renderizado bajo demanda. Importá el repositorio de GitHub en Vercel, configurá las tres variables indicadas en `supabase/README.md` y desplegá.
+El proyecto usa el adaptador oficial de Vercel para renderizado bajo demanda. Importá el repositorio de GitHub en Vercel, configurá las variables indicadas en `supabase/README.md` y desplegá.
 
 ## Crear el repositorio en GitHub
 

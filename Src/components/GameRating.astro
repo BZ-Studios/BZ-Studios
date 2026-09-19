@@ -1,0 +1,19 @@
+---
+import RatingSummary from './RatingSummary.astro';
+interface Props { gameId: string; average?: number; count?: number; userScore?: number; authenticated: boolean; verified: boolean; returnTo: string }
+const { gameId, average, count = 0, userScore, authenticated, verified, returnTo } = Astro.props;
+---
+<section class="game-rating" data-game-rating={gameId} data-authenticated={String(authenticated)} data-verified={String(verified)}>
+  <div><p class="kicker">Calificación de jugadores</p><h2>¿Qué te pareció?</h2><RatingSummary average={average} count={count} /></div>
+  <div class="rating-vote">
+    <p>{userScore ? `Tu calificación: ${userScore} de 5` : 'Seleccioná una puntuación'}</p>
+    <div class="rating-buttons" role="group" aria-label="Calificar este juego">
+      {[1,2,3,4,5].map((score) => <button type="button" data-rating-score={score} class:list={{ 'is-selected': userScore && score <= userScore }} aria-label={`${score} ${score === 1 ? 'estrella' : 'estrellas'}`} aria-pressed={userScore === score}>★</button>)}
+    </div>
+    {userScore && <button class="text-link rating-delete" type="button" data-rating-delete>Eliminar mi calificación</button>}
+    <p class="rating-feedback" data-rating-feedback aria-live="polite"></p>
+    {!authenticated && <div class="rating-gate" data-rating-gate hidden><p>Necesitás iniciar sesión o crear una cuenta para calificar.</p><div class="button-row"><a class="button button--primary button--small" href={`/cuenta/login/?next=${encodeURIComponent(returnTo)}`}>Iniciar sesión</a><a class="button button--ghost button--small" href={`/cuenta/registro/?next=${encodeURIComponent(returnTo)}`}>Registrarme</a></div></div>}
+    {authenticated && !verified && <p class="rating-gate">Verificá tu correo electrónico antes de calificar.</p>}
+  </div>
+</section>
+<script>import '../scripts/ratings';</script>

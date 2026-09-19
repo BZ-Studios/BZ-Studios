@@ -26,4 +26,6 @@ export interface Game {
   featured: boolean;
   seoTitle: string;
   seoDescription: string;
+  ratingAverage?: number;
+  ratingCount?: number;
 }

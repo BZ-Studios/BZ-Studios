@@ -1,14 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GameCard from '../../components/GameCard.astro';
+import GameRating from '../../components/GameRating.astro';
 import { siteConfig } from '../../config/site';
 import { getPublicGameBySlug, getPublicGames } from '../../lib/games';
+import { getAccount } from '../../lib/account';
 
 const game = await getPublicGameBySlug(Astro.params.slug ?? '');
 if (!game) return Astro.redirect('/404/', 302);
 
 const games = await getPublicGames();
 const related = games.filter((item) => item.slug !== game.slug && item.genres.some((genre) => game.genres.includes(genre))).slice(0, 3);
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
+const { data: ownRating } = user && supabase ? await supabase.from('game_ratings').select('score').eq('game_id', game.id).eq('user_id', user.id).maybeSingle() : { data: null };
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.url).href;
 const primaryGenre = game.genres[0]?.toLocaleLowerCase('es-AR');
 const genrePhrase = primaryGenre ? ` de ${primaryGenre}` : '';
@@ -35,6 +39,7 @@ const gameSchema = {
   gamePlatform: game.platforms?.length ? game.platforms : ['Web browser'],
   publisher: { '@type': 'Organization', name: siteConfig.name, url: siteConfig.url },
   creator: siteConfig.members.map((name) => ({ '@type': 'Person', name })),
+  ...(game.ratingCount && game.ratingAverage ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: game.ratingAverage, ratingCount: game.ratingCount, bestRating: 5, worstRating: 1 } } : {}),
   ...(game.playUrl ? { potentialAction: { '@type': 'PlayAction', target: game.playUrl } } : {}),
 };
 ---
@@ -69,6 +74,7 @@ const gameSchema = {
         </div>
       </div>
     </header>
+    <section class="section rating-section"><div class="shell"><GameRating gameId={game.id} average={game.ratingAverage} count={game.ratingCount} userScore={ownRating?.score} authenticated={Boolean(user)} verified={Boolean(user?.email_confirmed_at)} returnTo={`/juegos/${game.slug}/`} /></div></section>
     {game.features && game.features.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Características</p><h2>Lo que te espera</h2><ul class="feature-list">{game.features.map((feature) => <li>{feature}</li>)}</ul></div></section>
     )}
