@@ -23,10 +23,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="form-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required /></div>
         <div class="form-field">
           <label for="category">Categoría</label>
-          <select id="category" name="category" required>
-            <option value="">Elegí una opción</option>
-            <option>Idea</option><option>Sugerencia</option><option>Problema</option><option>Feedback sobre un juego</option><option>Consulta</option><option>Otro</option>
-          </select>
+          <div class="brand-select">
+            <select id="category" name="category" required>
+              <option value="">Elegí una opción</option>
+              <option>Idea</option><option>Sugerencia</option><option>Problema</option><option>Feedback sobre un juego</option><option>Consulta</option><option>Otro</option>
+            </select>
+            <span aria-hidden="true">⌄</span>
+          </div>
         </div>
         <div class="form-field">
           <label for="message">Mensaje</label>

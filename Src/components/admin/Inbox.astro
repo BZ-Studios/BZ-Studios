@@ -11,17 +11,23 @@ interface ContactMessage {
 interface Props { messages: ContactMessage[] }
 const { messages } = Astro.props;
 const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires' });
+const categories = [...new Set(messages.map((item) => item.category))].sort((a, b) => a.localeCompare(b, 'es'));
 ---
 
 <div class="inbox-toolbar">
-  <div class="admin-field"><label for="inbox-search">Buscar mensajes</label><input id="inbox-search" type="search" placeholder="Nombre, email, categoría o mensaje" data-inbox-search /></div>
-  <div class="admin-field"><label for="inbox-filter">Mostrar</label><select id="inbox-filter" data-inbox-filter><option value="all">Todos</option><option value="unread">Sin leer</option><option value="read">Leídos</option></select></div>
+  <div class="admin-field inbox-toolbar__search"><label for="inbox-search">Buscar mensajes</label><input id="inbox-search" type="search" placeholder="Nombre, email, categoría o mensaje" data-inbox-search /></div>
+  <div class="admin-field"><label for="inbox-filter">Estado</label><select id="inbox-filter" data-inbox-filter><option value="all">Todos</option><option value="unread">Sin leer</option><option value="read">Leídos</option></select></div>
+  <div class="admin-field"><label for="inbox-category">Categoría</label><select id="inbox-category" data-inbox-category><option value="all">Todas</option>{categories.map((category) => <option value={category}>{category}</option>)}</select></div>
+  <div class="admin-field"><label for="inbox-from">Desde</label><input id="inbox-from" type="date" data-inbox-from /></div>
+  <div class="admin-field"><label for="inbox-to">Hasta</label><input id="inbox-to" type="date" data-inbox-to /></div>
+  <div class="admin-field"><label for="inbox-order">Orden</label><select id="inbox-order" data-inbox-order><option value="newest">Más nuevos</option><option value="oldest">Más antiguos</option></select></div>
+  <button class="button button--ghost button--small inbox-clear" type="button" data-inbox-clear>Limpiar filtros</button>
 </div>
 <p class="inbox-count" data-inbox-count aria-live="polite">{messages.length} mensajes · {messages.filter((item) => !item.is_read).length} sin leer</p>
 <div class="admin-inbox" data-inbox>
   <div class="admin-empty admin-panel" data-inbox-empty hidden={messages.length > 0}><strong>Sin mensajes para mostrar</strong><p>Probá otra búsqueda o filtro. Las consultas del formulario aparecen aquí.</p></div>
   {messages.map((item) => (
-    <article class:list={['admin-message-card', { 'is-unread': !item.is_read }]} data-message-card={item.id} data-read={String(item.is_read)} data-search={`${item.name} ${item.email} ${item.category} ${item.message}`}>
+    <article class:list={['admin-message-card', { 'is-unread': !item.is_read }]} data-message-card={item.id} data-read={String(item.is_read)} data-category={item.category} data-created={item.created_at} data-search={`${item.name} ${item.email} ${item.category} ${item.message}`}>
       <details class="inbox-detail">
         <summary>
           <div class="inbox-sender"><span class="admin-message-card__category">{item.category}</span><h3>{item.name}</h3><span class="inbox-email">{item.email}</span></div>

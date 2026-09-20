@@ -1,5 +1,5 @@
 import { getSupabaseBrowserClient } from '../lib/supabase-browser';
-import { normalizeGameGenre } from '../config/gameGenres';
+import { normalizeGameGenres } from '../config/gameGenres';
 import { refreshInbox } from './inbox';
 
 type AdminImage = { id: string; storage_path: string; kind: 'cover' | 'banner' | 'screenshot'; alt_text: string | null; sort_order: number; public_url: string };
@@ -90,7 +90,9 @@ function editGame(game: AdminGame) {
   set('short_description', game.short_description); set('description', game.description);
   set('play_url', game.play_url); set('trailer_url', game.trailer_url); set('status', game.status);
   set('published_at', game.published_at); set('platforms', (game.platforms as string[] | null)?.join(', '));
-  set('genre', normalizeGameGenre((game.genres as string[] | null)?.[0])); set('features', (game.features as string[] | null)?.join('\n'));
+  const selectedGenres = new Set(normalizeGameGenres(game.genres as string[] | null));
+  form.querySelectorAll<HTMLInputElement>('input[name="genres"]').forEach((input) => { input.checked = selectedGenres.has(input.value); });
+  set('features', (game.features as string[] | null)?.join('\n'));
   set('controls', (game.controls as Array<{ input: string; action: string }> | null)?.map((control) => `${control.input} | ${control.action}`).join('\n'));
   set('seo_title', game.seo_title); set('seo_description', game.seo_description);
   (form.elements.namedItem('featured') as HTMLInputElement).checked = Boolean(game.featured);
@@ -130,12 +132,14 @@ form?.addEventListener('submit', async (event) => {
   try {
     const data = new FormData(form);
     const id = nullable(data.get('id'));
+    const genres = data.getAll('genres').map(String).filter(Boolean);
+    if (!genres.length) throw new Error('Elegí al menos un género.');
     const controls = String(data.get('controls') ?? '').split('\n').map((line) => line.split('|').map((part) => part.trim())).filter((pair) => pair[0] && pair[1]).map(([input, action]) => ({ input, action }));
     const payload = {
       name: String(data.get('name') ?? '').trim(), slug: slugify(String(data.get('slug') ?? '')),
       short_description: String(data.get('short_description') ?? '').trim(), description: String(data.get('description') ?? '').trim(),
       play_url: nullable(data.get('play_url')), trailer_url: nullable(data.get('trailer_url')), status: String(data.get('status')),
-      platforms: values(data.get('platforms')), genres: [String(data.get('genre') ?? '')].filter(Boolean), published_at: nullable(data.get('published_at')),
+      platforms: values(data.get('platforms')), genres, published_at: nullable(data.get('published_at')),
       featured: data.get('featured') === 'on', is_visible: data.get('is_visible') === 'on',
       seo_title: nullable(data.get('seo_title')), seo_description: nullable(data.get('seo_description')),
       features: String(data.get('features') ?? '').split('\n').map((item) => item.trim()).filter(Boolean), controls,
@@ -179,6 +183,15 @@ nameInput?.addEventListener('input', () => {
   const id = (form.elements.namedItem('id') as HTMLInputElement).value;
   const slug = form.elements.namedItem('slug') as HTMLInputElement;
   if (!id && slug) slug.value = slugify((form.elements.namedItem('name') as HTMLInputElement).value);
+});
+
+const logoutDialog = document.querySelector<HTMLDialogElement>('[data-logout-dialog]');
+const logoutOpen = document.querySelector<HTMLButtonElement>('[data-logout-open]');
+const logoutCancel = document.querySelector<HTMLButtonElement>('[data-logout-cancel]');
+logoutOpen?.addEventListener('click', () => logoutDialog?.showModal());
+logoutCancel?.addEventListener('click', () => logoutDialog?.close());
+logoutDialog?.addEventListener('click', (event) => {
+  if (event.target === logoutDialog) logoutDialog.close();
 });
 
 function instagramUrl(value: FormDataEntryValue | null) {

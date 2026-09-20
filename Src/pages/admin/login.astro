@@ -49,10 +49,28 @@ if (Astro.request.method === 'POST') {
         </div>
         <div class="admin-field">
           <label for="password">Contraseña</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" required />
+          <div class="admin-password-control">
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+            <button type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+            </button>
+          </div>
         </div>
-        <button class="button button--primary" type="submit">Entrar</button>
+        <div class="admin-login__actions"><button class="button button--primary" type="submit">Entrar</button><a class="button button--ghost" href="/">Volver al sitio</a></div>
       </form>
     </section>
   </main>
 </AdminLayout>
+
+<script>
+  const password = document.querySelector<HTMLInputElement>('#password');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-password-toggle]');
+  toggle?.addEventListener('click', () => {
+    if (!password) return;
+    const visible = password.type === 'text';
+    password.type = visible ? 'password' : 'text';
+    toggle.setAttribute('aria-pressed', String(!visible));
+    toggle.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    password.focus();
+  });
+</script>

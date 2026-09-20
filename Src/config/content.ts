@@ -1,6 +1,6 @@
 export const content = {
   home: {
-    eyebrow: 'Estudio independiente de videojuegos',
+    eyebrow: 'Estudio de videojuegos web',
     title: 'Jugamos con ideas. Creamos diversión.',
     intro: 'En B&Z Studios desarrollamos videojuegos independientes para jugar online, con personalidad, curiosidad y ganas de sorprender.',
   },

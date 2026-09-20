@@ -2,7 +2,15 @@ import type { APIRoute } from 'astro';
 import { siteConfig } from '../config/site';
 import { getPublicGames } from '../lib/games';
 
-const staticPaths = ['/', '/juegos/', '/sobre-nosotros/', '/ayuda/', '/contacto/'];
+const staticPaths = [
+  '/',
+  '/juegos/',
+  '/sobre-nosotros/',
+  '/ayuda/',
+  '/contacto/',
+  '/terminos/',
+  '/privacidad/',
+];
 
 function escapeXml(value: string) {
   return value

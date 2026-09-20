@@ -96,7 +96,7 @@ const baseSchema = {
   </head>
   <body>
     <Header />
-    <div class="navigation-progress" aria-hidden="true"><span></span></div>
+    <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
     <main id="contenido"><slot /></main>
     <Footer />
 <script>
@@ -115,23 +115,21 @@ const baseSchema = {
       if (motionPreference.matches) observer.disconnect();
     });
   }
-  // Native navigation remains intact; the indicator never delays loading.
-  let progressTimeout: ReturnType<typeof setTimeout>;
-  const resetProgress = () => {
-    document.documentElement.removeAttribute('data-navigating');
-    clearTimeout(progressTimeout);
+  const progress = document.querySelector<HTMLElement>('[data-scroll-progress]');
+  let progressFrame = 0;
+  const updateScrollProgress = () => {
+    progressFrame = 0;
+    const maximum = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = maximum > 0 ? Math.min(1, Math.max(0, window.scrollY / maximum)) : 0;
+    progress?.style.setProperty('--scroll-progress', String(ratio));
   };
-  document.addEventListener('click', (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
-    if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
-    const destination = new URL(link.href, location.href);
-    if (destination.origin !== location.origin || (destination.pathname === location.pathname && destination.search === location.search)) return;
-    document.documentElement.setAttribute('data-navigating', '');
-    clearTimeout(progressTimeout);
-    progressTimeout = setTimeout(resetProgress, 8000);
-  });
-  window.addEventListener('pageshow', resetProgress);
+  const scheduleProgressUpdate = () => {
+    if (!progressFrame) progressFrame = requestAnimationFrame(updateScrollProgress);
+  };
+  window.addEventListener('scroll', scheduleProgressUpdate, { passive: true });
+  window.addEventListener('resize', scheduleProgressUpdate);
+  window.addEventListener('pageshow', updateScrollProgress);
+  updateScrollProgress();
 </script>
   </body>
 </html>

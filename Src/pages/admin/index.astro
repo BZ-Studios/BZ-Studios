@@ -55,7 +55,7 @@ const serializedGames = games.map((game) => ({
       <div class="admin-user">
         <span>{session.user.email}</span>
         <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio ↗</a>
-        <form method="post" action="/admin/logout/"><button class="button button--ghost button--small" type="submit">Salir</button></form>
+        <button class="button button--ghost button--small" type="button" data-logout-open>Salir</button>
       </div>
     </div>
   </header>
@@ -127,7 +127,11 @@ const serializedGames = games.map((game) => ({
                   <div class="admin-field"><label for="play_url">URL para jugar</label><input id="play_url" name="play_url" type="url" placeholder="https://" /></div>
                   <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" placeholder="https://" /></div>
                   <div class="admin-field"><label for="platforms">Plataformas</label><input id="platforms" name="platforms" placeholder="Web, Windows" /><small>Separadas por comas.</small></div>
-                  <div class="admin-field"><label for="genre">Género *</label><select id="genre" name="genre" required><option value="">Elegí un género</option>{GAME_GENRES.map((genre) => <option value={genre}>{genre}</option>)}</select><small>Una categoría principal para ordenar el catálogo.</small></div>
+                  <fieldset class="admin-field admin-field--full admin-genre-picker" data-genre-picker>
+                    <legend>Géneros *</legend>
+                    <div class="admin-genre-options">{GAME_GENRES.map((genre) => <label><input type="checkbox" name="genres" value={genre} /><span>{genre}</span></label>)}</div>
+                    <small>Elegí uno o varios géneros para describir y filtrar el juego.</small>
+                  </fieldset>
                 </div>
               </fieldset>
 
@@ -181,6 +185,16 @@ const serializedGames = games.map((game) => ({
       </section>
     </div>
   </main>
+  <dialog class="admin-dialog" data-logout-dialog aria-labelledby="logout-title">
+    <div class="admin-dialog__icon" aria-hidden="true">↪</div>
+    <p class="kicker">Panel privado</p>
+    <h2 id="logout-title">¿Cerrar sesión?</h2>
+    <p>Vas a salir del dashboard de administración. Podrás volver a ingresar con tu cuenta autorizada.</p>
+    <div class="admin-dialog__actions">
+      <button class="button button--ghost" type="button" data-logout-cancel>Cancelar</button>
+      <form method="post" action="/admin/logout/"><button class="button button--danger" type="submit">Sí, salir</button></form>
+    </div>
+  </dialog>
   <script is:inline type="application/json" id="admin-games" set:html={JSON.stringify(serializedGames).replace(/</g, '\\u003c')} />
   <script>import '../../scripts/admin';</script>
 </AdminLayout>
