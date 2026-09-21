@@ -1,10 +1,10 @@
 ---
 import AccountLayout from '../../layouts/AccountLayout.astro';
-import { getAccount, sameOrigin } from '../../lib/account';
+import { accountRedirectUrl, getAccount, sameOrigin } from '../../lib/account';
 const { supabase } = await getAccount(Astro.request, Astro.cookies); let sent = false, error = '';
 if (Astro.request.method === 'POST') {
   if (!sameOrigin(Astro.request)) error = 'Solicitud no válida.';
-  else { const form = await Astro.request.formData(); const email = String(form.get('email') ?? '').trim(); await supabase?.auth.resetPasswordForEmail(email, { redirectTo: `${Astro.url.origin}/cuenta/callback/?next=/cuenta/restablecer/` }); sent = true; }
+  else { const form = await Astro.request.formData(); const email = String(form.get('email') ?? '').trim(); const result = await supabase?.auth.resetPasswordForEmail(email, { redirectTo: accountRedirectUrl('/cuenta/callback/?next=%2Fcuenta%2Frestablecer%2F') }); error = result?.error ? 'No pudimos enviar el enlace. Intentá nuevamente.' : ''; sent = !error; }
 }
 ---
 <AccountLayout title="Recuperar contraseña"><form class="account-form" method="post">{error && <p class="form-status is-error" role="alert">{error}</p>}{sent ? <div class="account-notice"><strong>Revisá tu correo</strong><p>Si existe una cuenta con esa dirección, recibirás un enlace temporal para restablecer la contraseña.</p></div> : <><p>Ingresá tu correo y te enviaremos un enlace seguro. No informaremos si existe una cuenta asociada.</p><label>Correo electrónico<input name="email" type="email" autocomplete="email" required /></label><button class="button button--primary" type="submit">Enviar enlace</button></>}</form></AccountLayout>

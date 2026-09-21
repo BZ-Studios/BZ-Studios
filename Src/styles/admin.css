@@ -20,7 +20,7 @@
 .admin-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 2rem; }
 .admin-heading h1 { font-size: clamp(2.8rem,5vw,4.8rem); background: var(--brand-gradient); background-clip: text; color: transparent; }
 .admin-heading p { max-width: 42rem; margin-bottom: 0; }
-.admin-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.admin-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1rem; margin-bottom: 2.5rem; }
 .admin-stats article { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: .2rem 1rem; padding: 1.25rem 1.4rem; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: linear-gradient(145deg,rgba(24,22,34,.92),rgba(12,11,18,.92)); box-shadow: 0 1.25rem 3rem rgba(0,0,0,.18); }
 .admin-stats article::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--brand-gradient); }
 .admin-stats span { color: #c5c3cd; font-size: .76rem; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
@@ -101,6 +101,32 @@
 .admin-input-prefix > span { display: grid; place-items: center; border: 1px solid rgba(255,255,255,.16); border-right: 0; border-radius: 7px 0 0 7px; color: var(--pink); background: rgba(243,41,168,.07); font-weight: 900; }
 .admin-input-prefix input { border-radius: 0 7px 7px 0; }
 .admin-inline-check { display: flex; align-items: center; gap: .6rem; color: #c8c6d0; font-size: .78rem; font-weight: 800; cursor: pointer; }
+.admin-account-list { display: grid; gap: .85rem; }
+.admin-account-card { overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: linear-gradient(145deg,rgba(22,20,30,.9),rgba(11,10,16,.94)); }
+.admin-account-card summary { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto auto; align-items: center; gap: 1rem; padding: 1rem 1.2rem; cursor: pointer; list-style: none; }
+.admin-account-card summary::-webkit-details-marker { display: none; }
+.admin-account-card summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: -3px; }
+.admin-account-avatar { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 8px; color: #09060d; background: var(--brand-gradient); font-size: .82rem; font-weight: 950; letter-spacing: .04em; }
+.admin-account-identity { display: grid; min-width: 0; gap: .2rem; }
+.admin-account-identity strong { overflow-wrap: anywhere; }
+.admin-account-identity small { color: #9693a0; overflow-wrap: anywhere; }
+.admin-account-state { padding: .3rem .55rem; border: 1px solid rgba(255,193,61,.3); border-radius: 999px; color: var(--yellow); background: rgba(255,193,61,.06); font-size: .62rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.admin-account-state.is-verified { border-color: rgba(82,214,138,.35); color: #72e6a2; background: rgba(82,214,138,.07); }
+.admin-account-count { display: grid; min-width: 5.5rem; text-align: right; }
+.admin-account-count strong { color: #fff; font-size: 1.15rem; }
+.admin-account-count small { color: #85828f; font-size: .65rem; }
+.admin-account-expand { color: var(--yellow); transition: transform .2s; }
+.admin-account-card[open] .admin-account-expand { transform: rotate(180deg); }
+.admin-account-content { padding: 0 1.2rem 1.2rem; }
+.admin-account-dates { display: flex; flex-wrap: wrap; gap: .7rem 1.5rem; padding: 1rem 0; border-top: 1px solid var(--line); color: #8f8c98; font-size: .72rem; }
+.admin-account-dates strong { color: #c8c6d0; }
+.admin-rating-list { display: grid; gap: .55rem; }
+.admin-rating-list article { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .85rem; border: 1px solid rgba(255,255,255,.075); border-radius: 7px; background: rgba(0,0,0,.18); }
+.admin-rating-list article > div { display: grid; gap: .15rem; }
+.admin-rating-list a { color: #fff; }
+.admin-rating-list small { color: #777481; }
+.admin-rating-list article > span { color: var(--yellow); letter-spacing: .08em; white-space: nowrap; }
+.admin-account-empty { margin: 0; padding: .8rem; border-top: 1px solid var(--line); }
 .admin-inbox { display: grid; gap: .9rem; }
 .admin-message-card { position: relative; padding: 1.25rem 1.4rem; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: linear-gradient(145deg,rgba(22,20,30,.9),rgba(11,10,16,.94)); overflow: hidden; }
 .admin-message-card.is-unread { border-color: rgba(243,41,168,.36); }
@@ -143,14 +169,12 @@
 }
 @media (max-width: 900px) {
   .admin-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .admin-stats article:last-child { grid-column: 1 / -1; }
   .admin-section-heading { grid-template-columns: 1fr; gap: .5rem; }
   .admin-team-grid { gap: .9rem; }
 }
 @media (max-width: 760px) {
   .admin-topbar { position: static; }
   .admin-stats,.admin-team-grid { grid-template-columns: 1fr; }
-  .admin-stats article:last-child { grid-column: auto; }
   .admin-form-grid,.admin-media { grid-template-columns: 1fr; }
   .admin-field--full { grid-column: auto; }
   .admin-heading,.admin-topbar__inner,.admin-user { align-items: flex-start; flex-direction: column; }
@@ -160,6 +184,9 @@
   .admin-heading .button { width: 100%; }
   .admin-checks { grid-template-columns: 1fr; }
   .admin-message-card__head { flex-direction: column; gap: .5rem; }
+  .admin-account-card summary { grid-template-columns: auto minmax(0,1fr) auto; gap: .75rem; }
+  .admin-account-state,.admin-account-count { grid-column: 2; justify-self: start; text-align: left; }
+  .admin-account-expand { grid-column: 3; grid-row: 1; }
 }
 @media (max-width: 520px) {
   .admin-shell { width: min(calc(100% - 1rem),1440px); }
@@ -181,6 +208,8 @@
   .admin-media__row { align-items: stretch; flex-wrap: wrap; }
   .admin-media__row input { flex: 1 1 4rem; }
   .admin-message-card { padding: 1rem; }
+  .admin-account-card summary,.admin-account-content { padding-inline: .9rem; }
+  .admin-rating-list article { align-items: flex-start; flex-direction: column; }
   .admin-login { padding: .75rem; }
   .admin-login__card { padding: 1.25rem; }
 }

@@ -391,13 +391,33 @@ p { color: var(--muted); }
 .account-heading h1 { font-size: clamp(2.5rem,6vw,4.5rem); }
 .account-card { padding: clamp(1rem,4vw,2rem); border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(145deg,rgba(23,18,30,.97),rgba(8,6,12,.98)); box-shadow: 0 2rem 5rem rgba(0,0,0,.28); }
 .account-form { display: grid; gap: 1rem; }
-.account-form > label:not(.account-check) { display: grid; gap: .4rem; color: #f3f2f6; font-size: .85rem; font-weight: 800; }
+.account-form > label:not(.account-check),.account-field { display: grid; gap: .4rem; color: #f3f2f6; font-size: .85rem; font-weight: 800; }
+.account-field > label { color: #f3f2f6; }
 .account-form input:not([type='checkbox']) { width: 100%; min-height: 3.15rem; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 7px; background: #09080e; color: #fff; }
 .account-form input:focus { border-color: var(--pink); outline: 3px solid rgba(243,41,168,.15); }
+.account-form input.is-invalid,.account-form input[aria-invalid='true'] { border-color: var(--warm); background: rgba(255,93,118,.055); box-shadow: 0 0 0 3px rgba(255,93,118,.09); }
+.account-form.was-validated input:invalid { border-color: var(--warm); background: rgba(255,93,118,.055); box-shadow: 0 0 0 3px rgba(255,93,118,.09); }
 .account-form small { color: var(--muted); font-weight: 400; }
+.account-password-control { position: relative; }
+.account-password-control input { padding-right: 3.5rem !important; }
+.account-password-control button { position: absolute; top: 50%; right: .55rem; translate: 0 -50%; display: grid; place-items: center; width: 2.35rem; height: 2.35rem; border: 1px solid transparent; border-radius: 6px; color: #918e9b; background: transparent; cursor: pointer; }
+.account-password-control button:hover,.account-password-control button[aria-pressed='true'] { border-color: rgba(243,41,168,.35); color: #fff; background: rgba(243,41,168,.09); }
+.account-password-control svg { width: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.field-feedback { min-height: 1.15em; color: #85818d; font-size: .75rem; font-weight: 650; }
+.field-feedback.is-error { color: #ff8295; }
+.field-feedback.is-success { color: #72e6a2; }
 .account-check { display: flex; align-items: flex-start; gap: .65rem; color: var(--muted); font-size: .85rem; }
 .account-check input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; accent-color: var(--pink); }
 .account-check span { line-height: 1.55; }
+.account-legal-trigger { display: inline; padding: 0; border: 0; color: #fff; background: transparent; font: inherit; text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
+.account-legal-trigger:hover { color: var(--yellow); }
+.account-legal-dialog { width: min(calc(100% - 2rem),44rem); max-height: min(80svh,48rem); padding: clamp(1.25rem,4vw,2rem); overflow: auto; border: 1px solid rgba(243,41,168,.38); border-radius: 14px; color: #fff; background: linear-gradient(145deg,#17121f,#09080d); box-shadow: 0 2rem 7rem rgba(0,0,0,.68),0 0 3rem rgba(124,25,230,.14); }
+.account-legal-dialog::backdrop { background: rgba(3,2,6,.8); backdrop-filter: blur(7px); }
+.account-legal-dialog__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.account-legal-dialog__heading h2 { font-size: clamp(2rem,7vw,3.5rem); }
+.account-legal-dialog__heading > button { flex: 0 0 auto; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--line); border-radius: 50%; color: #fff; background: rgba(255,255,255,.04); font-size: 1.45rem; cursor: pointer; }
+.account-legal-dialog .legal-copy { max-height: 48svh; margin-bottom: 1.5rem; padding-right: .5rem; overflow: auto; }
+.account-legal-dialog .legal-copy h3 { margin: 1.4rem 0 .55rem; font-family: var(--font-body); font-size: 1.05rem; letter-spacing: 0; text-transform: none; }
 .hp-field { position: absolute !important; left: -9999px !important; }
 .account-notice,.form-status { padding: 1rem; border: 1px solid #52d68a; border-radius: 7px; background: rgba(82,214,138,.08); color: #eafff2; }
 .form-status.is-error { border-color: var(--warm); background: rgba(255,93,118,.08); }

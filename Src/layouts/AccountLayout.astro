@@ -6,10 +6,13 @@ const { title, eyebrow = 'Cuenta B&Z', description } = Astro.props;
 <BaseLayout title={title} description={description ?? `${title} en B&Z Studios.`} noindex>
   <section class="account-page"><div class="shell account-shell"><div class="account-heading"><p class="kicker">{eyebrow}</p><h1>{title}</h1></div><div class="account-card"><slot /></div></div></section>
   <script>
-    document.querySelectorAll<HTMLFormElement>('.account-form').forEach((form) => form.addEventListener('submit', () => {
-      if (!form.checkValidity()) return;
-      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-      if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+    import '../scripts/account';
+    document.querySelectorAll<HTMLFormElement>('.account-form').forEach((form) => form.addEventListener('submit', (event) => {
+      queueMicrotask(() => {
+        if (event.defaultPrevented || !form.checkValidity()) return;
+        const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+      });
     }));
   </script>
 </BaseLayout>

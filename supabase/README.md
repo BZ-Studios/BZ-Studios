@@ -8,7 +8,7 @@ Para habilitar cuentas y calificaciones, ejecutá después `migrations/202609190
 
 En **Authentication > URL Configuration** agregá `https://bzstudios.com.ar/**` a las URLs de redirección. Conservá activada la confirmación de correo. Supabase aplica límites de frecuencia y el formulario agrega un campo trampa contra bots; si más adelante se habilita CAPTCHA en Supabase, primero deberá integrarse su widget y enviar el token desde ambos formularios.
 
-En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.
+En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para consultar usuarios y calificaciones en el dashboard y permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.
 
 Ejecutá también, en este orden:
 
@@ -45,7 +45,7 @@ El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
 - `PUBLIC_SUPABASE_URL`
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `PUBLIC_SITE_URL`
-- `SUPABASE_SECRET_KEY` como variable privada del servidor, necesaria únicamente para eliminar cuentas desde el perfil
+- `SUPABASE_SECRET_KEY` como variable privada del servidor, necesaria para la sección de usuarios del dashboard y para eliminar cuentas desde el perfil
 
 Para recibir también cada mensaje por correo mediante Resend agregá:
 

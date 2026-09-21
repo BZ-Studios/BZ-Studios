@@ -37,7 +37,7 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 2. Iniciá el proyecto y abrí `http://localhost:4321/admin/`.
 3. Desde el panel podés crear, editar, ocultar, destacar o eliminar juegos, y subir portada y capturas.
 
-La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante y administrar los mensajes recibidos.
+La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante, consultar usuarios con sus calificaciones y administrar los mensajes recibidos.
 
 ## Contenido y configuración
 

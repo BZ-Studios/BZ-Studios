@@ -14,9 +14,22 @@ if (Astro.request.method === 'POST') {
     const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
     const result = await supabase?.auth.signInWithPassword({ email, password });
-    if (!result || result.error || !result.data.user?.email_confirmed_at) { await supabase?.auth.signOut(); error = 'No pudimos iniciar sesión. Revisá tus datos y verificá tu correo.'; }
-    else return Astro.redirect(safeNext(String(form.get('next') ?? '')), 303);
+    if (!result || result.error || !result.data.user?.email_confirmed_at) {
+      await supabase?.auth.signOut();
+      error = 'No pudimos iniciar sesión. Revisá tus datos y verificá tu correo.';
+    } else return Astro.redirect(safeNext(String(form.get('next') ?? '')), 303);
   }
 }
 ---
-<AccountLayout title="Iniciar sesión"><form class="account-form" method="post"><input type="hidden" name="next" value={next}/>{error && <p class="form-status is-error" role="alert">{error}</p>}<label>Correo electrónico<input name="email" type="email" autocomplete="email" required /></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" required /></label><button class="button button--primary" type="submit">Ingresar</button><a class="text-link" href="/cuenta/recuperar/">¿Olvidaste tu contraseña?</a><p>¿Todavía no tenés cuenta? <a href={`/cuenta/registro/?next=${encodeURIComponent(next)}`}>Registrate</a>.</p></form></AccountLayout>
+
+<AccountLayout title="Iniciar sesión">
+  <form class="account-form" method="post">
+    <input type="hidden" name="next" value={next}/>
+    {error && <p class="form-status is-error" role="alert">{error}</p>}
+    <div class="account-field"><label for="login-email">Correo electrónico</label><input id="login-email" name="email" type="email" autocomplete="email" required /></div>
+    <div class="account-field"><label for="login-password">Contraseña</label><div class="account-password-control"><input id="login-password" name="password" type="password" autocomplete="current-password" required /><button type="button" data-password-toggle aria-controls="login-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div></div>
+    <button class="button button--primary" type="submit">Ingresar</button>
+    <a class="text-link" href="/cuenta/recuperar/">¿Olvidaste tu contraseña?</a>
+    <p>¿Todavía no tenés cuenta? <a href={`/cuenta/registro/?next=${encodeURIComponent(next)}`}>Registrate</a>.</p>
+  </form>
+</AccountLayout>
