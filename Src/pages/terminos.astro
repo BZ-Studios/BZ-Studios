@@ -1,4 +1,9 @@
 ---
 import AccountLayout from '../layouts/AccountLayout.astro';
+import LegalDocument from '../components/LegalDocument.astro';
+import { termsDocument } from '../config/legal';
 ---
-<AccountLayout title="Términos de uso" eyebrow="Información legal"><div class="legal-copy"><p>Al crear una cuenta aceptás usar B&Z Studios de forma lícita y respetuosa. No debés automatizar registros, manipular calificaciones ni interferir con el servicio.</p><h2>Cuentas y contenido</h2><p>Sos responsable de mantener segura tu contraseña. Podemos limitar o suspender usos abusivos. Las calificaciones representan opiniones personales y pueden eliminarse desde el perfil.</p><h2>Disponibilidad</h2><p>El servicio puede modificarse o interrumpirse por mantenimiento. Los juegos y marcas pertenecen a sus respectivos titulares.</p><p>Última actualización: 19 de septiembre de 2026.</p></div></AccountLayout>
+
+<AccountLayout title={termsDocument.title} eyebrow={termsDocument.eyebrow} description="Condiciones completas para usar B&Z Studios, crear una cuenta, calificar juegos y acceder a nuestros contenidos.">
+  <LegalDocument document={termsDocument} />
+</AccountLayout>

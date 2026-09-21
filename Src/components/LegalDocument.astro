@@ -1,0 +1,29 @@
+---
+import type { LegalDocument } from '../config/legal';
+interface Props { document: LegalDocument; compact?: boolean }
+const { document, compact = false } = Astro.props;
+const sections = document.sections.map((section) => ({
+  ...section,
+  id: section.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+}));
+---
+
+<article class:list={['legal-document', { 'is-compact': compact }]}>
+  <div class="legal-introduction">
+    {document.introduction.map((paragraph) => <p>{paragraph}</p>)}
+  </div>
+  {!compact && <nav class="legal-toc" aria-label="Contenido del documento"><strong>En esta página</strong><ol>{sections.map((section) => <li><a href={`#${section.id}`}>{section.title}</a></li>)}</ol></nav>}
+  {sections.map((section) => (
+    <section id={section.id}>
+      {compact ? <h3>{section.title}</h3> : <h2>{section.title}</h2>}
+      {section.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {section.items && <ul>{section.items.map((item) => <li>{item}</li>)}</ul>}
+    </section>
+  ))}
+  <section class="legal-references">
+    {compact ? <h3>Normativa y fuentes oficiales</h3> : <h2>Normativa y fuentes oficiales</h2>}
+    <p>Estos enlaces permiten consultar directamente las normas y guías oficiales utilizadas como referencia:</p>
+    <ul>{document.references.map((reference) => <li><a href={reference.href} target="_blank" rel="noreferrer">{reference.label} <span aria-hidden="true">↗</span></a></li>)}</ul>
+  </section>
+  <p class="legal-updated"><strong>Última actualización:</strong> {document.updatedAt}.</p>
+</article>

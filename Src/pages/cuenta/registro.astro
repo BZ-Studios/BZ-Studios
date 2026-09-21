@@ -1,6 +1,8 @@
 ---
 import AccountLayout from '../../layouts/AccountLayout.astro';
+import LegalDocument from '../../components/LegalDocument.astro';
 import { accountRedirectUrl, getAccount, safeNext, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
+import { privacyDocument, termsDocument } from '../../config/legal';
 
 const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
 const next = safeNext(Astro.url.searchParams.get('next'));
@@ -75,13 +77,13 @@ if (Astro.request.method === 'POST') {
   </form>
 
   <dialog class="account-legal-dialog" id="terms-dialog" data-legal-dialog aria-labelledby="terms-dialog-title">
-    <div class="account-legal-dialog__heading"><div><p class="kicker">Información legal</p><h2 id="terms-dialog-title">Términos y condiciones</h2></div><button type="button" data-legal-close aria-label="Cerrar términos">×</button></div>
-    <div class="legal-copy"><p>Al crear una cuenta aceptás usar B&Z Studios de forma lícita y respetuosa. No debés automatizar registros, manipular calificaciones ni interferir con el servicio.</p><h3>Cuentas y contenido</h3><p>Sos responsable de mantener segura tu contraseña. Podemos limitar o suspender usos abusivos. Las calificaciones representan opiniones personales y pueden eliminarse desde el perfil.</p><h3>Disponibilidad</h3><p>El servicio puede modificarse o interrumpirse por mantenimiento. Los juegos y marcas pertenecen a sus respectivos titulares.</p></div>
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{termsDocument.eyebrow}</p><h2 id="terms-dialog-title">{termsDocument.title}</h2></div><button type="button" data-legal-close aria-label="Cerrar términos">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={termsDocument} compact /></div>
     <button class="button button--primary" type="button" data-legal-close>Entendido</button>
   </dialog>
   <dialog class="account-legal-dialog" id="privacy-dialog" data-legal-dialog aria-labelledby="privacy-dialog-title">
-    <div class="account-legal-dialog__heading"><div><p class="kicker">Tus datos</p><h2 id="privacy-dialog-title">Política de privacidad</h2></div><button type="button" data-legal-close aria-label="Cerrar política de privacidad">×</button></div>
-    <div class="legal-copy"><p>Usamos tu correo, nombre de usuario y datos de sesión para gestionar la cuenta. Guardamos las calificaciones vinculadas a tu identificador de usuario.</p><h3>Finalidad y almacenamiento</h3><p>Supabase procesa la autenticación y almacena los datos. No guardamos contraseñas en nuestra base: el proveedor las protege de forma segura. No vendemos tus datos personales.</p><h3>Tus opciones</h3><p>Podés modificar tu usuario, cambiar la contraseña, eliminar calificaciones y solicitar la eliminación definitiva de la cuenta desde tu perfil.</p></div>
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{privacyDocument.eyebrow}</p><h2 id="privacy-dialog-title">{privacyDocument.title}</h2></div><button type="button" data-legal-close aria-label="Cerrar política de privacidad">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={privacyDocument} compact /></div>
     <button class="button button--primary" type="button" data-legal-close>Entendido</button>
   </dialog>
 </AccountLayout>
