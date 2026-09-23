@@ -7,7 +7,8 @@
     "dev": "node ./node_modules/astro/bin/astro.mjs dev",
     "build": "node ./node_modules/astro/bin/astro.mjs check && node ./node_modules/astro/bin/astro.mjs build",
     "check": "node ./node_modules/astro/bin/astro.mjs check",
-    "preview": "node ./node_modules/astro/bin/astro.mjs preview"
+    "preview": "node ./node_modules/astro/bin/astro.mjs preview",
+    "test:bz-id": "node scripts/check-bz-id-contract.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "latest",

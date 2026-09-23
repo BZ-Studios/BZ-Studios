@@ -44,7 +44,16 @@ document.querySelectorAll<HTMLElement>('[data-game-rating]').forEach((root) => {
       applyResult(data as { average: number; count: number; userScore?: number | null });
       if (feedback) feedback.textContent = score ? 'Calificación guardada.' : 'Calificación eliminada.';
       if (score && !root.querySelector('[data-rating-delete]')) location.reload();
-    } catch (error) { if (feedback) feedback.textContent = error instanceof Error && error.message.includes('RATE_LIMITED') ? 'Esperá unos segundos e intentá nuevamente.' : 'No pudimos guardar la calificación.'; }
+    } catch (error) {
+      if (feedback) {
+        const message = error instanceof Error ? error.message : '';
+        feedback.textContent = message.includes('RATE_LIMITED')
+          ? 'Esperá unos segundos e intentá nuevamente.'
+          : message.includes('ACCOUNT_RESTRICTED')
+            ? 'Tu B&Z ID tiene una restricción activa para calificar. Revisá el detalle y la opción de apelar en tu perfil.'
+            : 'No pudimos guardar la calificación.';
+      }
+    }
     finally { setBusy(false); }
   };
   buttons.forEach((button) => button.addEventListener('click', () => mutate(Number(button.dataset.ratingScore))));

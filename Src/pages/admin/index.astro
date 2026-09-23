@@ -4,7 +4,9 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import Inbox from '../../components/admin/Inbox.astro';
 import { getAdminSession } from '../../lib/admin';
-import { createAdminAuthClient } from '../../lib/account';
+import { createAdminAuthClient, sameOrigin } from '../../lib/account';
+import { applyModerationAction, deletePlayerAccount, reviewModerationAppeal } from '../../lib/moderation';
+import { ADMIN_ROLE_LABELS, MODERATION_ACTION_LABELS, PLAYER_STATUS_LABELS, type AdminRole, type ModerationActionType, type PlayerStatus } from '../../config/bzId';
 import { fallbackMembers } from '../../lib/members';
 import { GAME_GENRES } from '../../config/gameGenres';
 import { GAME_STATUSES } from '../../types/game';
@@ -13,6 +15,57 @@ const session = await getAdminSession(Astro.request, Astro.cookies);
 if (!session.user || !session.isAdmin || !session.supabase) return Astro.redirect('/admin/login/');
 
 const supabase = session.supabase;
+const adminAuth = createAdminAuthClient();
+const adminRole = (session.role ?? 'support') as AdminRole;
+let dashboardNotice = Astro.url.searchParams.get('notice') ?? '';
+let dashboardError = Astro.url.searchParams.get('error') ?? '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+  try {
+    if (!sameOrigin(Astro.request)) throw new Error('Solicitud no válida.');
+    if (!adminAuth) throw new Error('Falta SUPABASE_SECRET_KEY en el servidor.');
+    if (action === 'moderate-player') {
+      await applyModerationAction(adminAuth, {
+        actorUserId: session.user.id,
+        actorRole: adminRole,
+        playerId: String(form.get('player_id') ?? ''),
+        actionType: String(form.get('action_type') ?? '') as ModerationActionType,
+        reasonCode: String(form.get('reason_code') ?? '').trim(),
+        userMessage: String(form.get('user_message') ?? '').trim(),
+        internalNote: String(form.get('internal_note') ?? '').trim(),
+        durationDays: Number(form.get('duration_days') ?? 0),
+        gameId: String(form.get('game_id') ?? '') || undefined,
+      });
+      return Astro.redirect(`/admin/?notice=${encodeURIComponent('Medida aplicada y registrada en la auditoría.')}#usuarios`, 303);
+    }
+    if (action === 'delete-player') {
+      await deletePlayerAccount(adminAuth, {
+        actorUserId: session.user.id,
+        actorRole: adminRole,
+        playerId: String(form.get('player_id') ?? ''),
+        expectedUsername: String(form.get('username') ?? ''),
+        confirmation: String(form.get('confirmation') ?? ''),
+      });
+      return Astro.redirect(`/admin/?notice=${encodeURIComponent('Cuenta eliminada de B&Z ID y Supabase Auth.')}#usuarios`, 303);
+    }
+    if (action === 'review-appeal') {
+      await reviewModerationAppeal(adminAuth, {
+        actorUserId: session.user.id,
+        actorRole: adminRole,
+        appealId: String(form.get('appeal_id') ?? ''),
+        status: String(form.get('appeal_status') ?? ''),
+        decision: String(form.get('decision') ?? '').trim(),
+      });
+      return Astro.redirect(`/admin/?notice=${encodeURIComponent('Apelación resuelta y auditada. Si corresponde levantar la medida, aplicá “Restablecer cuenta”.')}#usuarios`, 303);
+    }
+    throw new Error('Acción administrativa desconocida.');
+  } catch (postError) {
+    dashboardError = postError instanceof Error ? postError.message : 'No se pudo completar la acción.';
+  }
+}
+
 const [gamesResult, membersResult, messagesResult] = await Promise.all([
   supabase.from('games').select('*, game_images(id, storage_path, kind, alt_text, sort_order)').order('created_at', { ascending: false }),
   supabase.from('site_members').select('id, name, role, instagram_url, sort_order, is_visible').order('sort_order', { ascending: true }),
@@ -37,40 +90,62 @@ const members = [
 const contactMessages = messagesResult.data ?? [];
 const unreadMessages = contactMessages.filter((item) => !item.is_read).length;
 const accountDateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' });
-const adminAuth = createAdminAuthClient();
 let accountsError = '';
+let identityReady = true;
 let accountUsers: Array<{
   id: string;
+  playerId: string | null;
+  publicId: string | null;
+  status: PlayerStatus | null;
   username: string;
   email: string;
   confirmed: boolean;
   createdAt: string;
   lastSignIn: string | null;
+  linkedGames: Array<{ id: string; gameName: string; platform: string; displayName: string | null; status: string }>;
+  moderation: Array<{ id: string; action: ModerationActionType; message: string; scope: string; startsAt: string; endsAt: string | null }>;
+  appeals: Array<{ id: string; status: string; message: string; decision: string | null; createdAt: string }>;
   ratings: Array<{ gameId: string; score: number; updatedAt: string; game: { name: string; slug: string } | null }>;
 }> = [];
 
 if (!adminAuth) {
   accountsError = 'Falta configurar SUPABASE_SECRET_KEY para consultar los usuarios desde el servidor.';
 } else {
-  const [profilesResult, ratingsResult, authUsersResult] = await Promise.all([
+  const [profilesResult, ratingsResult, authUsersResult, playersResult, linksResult, moderationResult, appealsResult] = await Promise.all([
     adminAuth.from('profiles').select('user_id, username, created_at'),
     adminAuth.from('game_ratings').select('user_id, game_id, score, updated_at, games(name, slug)').order('updated_at', { ascending: false }),
     adminAuth.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    adminAuth.from('players').select('id, auth_user_id, public_id, status'),
+    adminAuth.from('player_game_accounts').select('id, player_id, platform, display_name, link_status, games(name)').neq('link_status', 'unlinked'),
+    adminAuth.from('moderation_actions').select('id, player_id, action_type, user_message, scope_type, starts_at, ends_at, revoked_at').is('revoked_at', null).or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`).order('created_at', { ascending: false }),
+    adminAuth.from('moderation_appeals').select('id, player_id, status, message, decision, created_at').order('created_at', { ascending: false }),
   ]);
   const accountError = profilesResult.error ?? ratingsResult.error ?? authUsersResult.error;
+  identityReady = !playersResult.error;
   if (accountError) accountsError = `No se pudo cargar la sección de usuarios: ${accountError.message}`;
   else {
     const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.user_id, profile]));
     const ratings = (ratingsResult.data ?? []) as Array<{ user_id: string; game_id: string; score: number; updated_at: string; games: { name: string; slug: string } | Array<{ name: string; slug: string }> | null }>;
+    const players = new Map((playersResult.data ?? []).map((player) => [player.auth_user_id, player]));
+    const links = linksResult.data ?? [];
+    const moderation = moderationResult.data ?? [];
+    const appeals = appealsResult.data ?? [];
     accountUsers = authUsersResult.data.users.map((authUser) => {
       const profile = profiles.get(authUser.id);
+      const player = players.get(authUser.id);
       return {
         id: authUser.id,
+        playerId: player?.id ?? null,
+        publicId: player?.public_id ?? null,
+        status: (player?.status === 'suspended' && !moderation.some((item) => item.player_id === player.id && item.action_type === 'temporary_suspension') ? 'active' : player?.status ?? null) as PlayerStatus | null,
         username: profile?.username ?? `jugador_${authUser.id.slice(0, 8)}`,
         email: authUser.email ?? 'Correo no disponible',
         confirmed: Boolean(authUser.email_confirmed_at),
         createdAt: authUser.created_at,
         lastSignIn: authUser.last_sign_in_at ?? null,
+        linkedGames: links.filter((link) => link.player_id === player?.id).map((link) => ({ id: link.id, gameName: (Array.isArray(link.games) ? link.games[0]?.name : (link.games as { name?: string } | null)?.name) ?? 'Juego', platform: link.platform, displayName: link.display_name, status: link.link_status })),
+        moderation: moderation.filter((item) => item.player_id === player?.id).map((item) => ({ id: item.id, action: item.action_type as ModerationActionType, message: item.user_message, scope: item.scope_type, startsAt: item.starts_at, endsAt: item.ends_at })),
+        appeals: appeals.filter((appeal) => appeal.player_id === player?.id).map((appeal) => ({ id: appeal.id, status: appeal.status, message: appeal.message, decision: appeal.decision, createdAt: appeal.created_at })),
         ratings: ratings.filter((rating) => rating.user_id === authUser.id).map((rating) => ({
           gameId: rating.game_id,
           score: rating.score,
@@ -99,7 +174,7 @@ const serializedGames = games.map((game) => ({
         <a href="#juegos">Juegos</a><a href="#equipo">Equipo</a><a href="#usuarios">Usuarios</a><a href="#mensajes">Mensajes</a>
       </nav>
       <div class="admin-user">
-        <span>{session.user.email}</span>
+        <span>{session.user.email}<small>{ADMIN_ROLE_LABELS[adminRole]}</small></span>
         <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio ↗</a>
         <button class="button button--ghost button--small" type="button" data-logout-open>Salir</button>
       </div>
@@ -124,6 +199,9 @@ const serializedGames = games.map((game) => ({
       {membersResult.error && <p class="admin-message" data-kind="error">Los perfiles se muestran con sus datos iniciales. Aplicá la migración de integrantes en Supabase para poder guardarlos.</p>}
       {messagesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar la bandeja de mensajes: {messagesResult.error.message}</p>}
       {accountsError && <p class="admin-message" data-kind="error">{accountsError}</p>}
+      {dashboardNotice && <p class="admin-message" data-kind="success">{dashboardNotice}</p>}
+      {dashboardError && <p class="admin-message" data-kind="error">{dashboardError}</p>}
+      {!accountsError && !identityReady && <p class="admin-message" data-kind="error"><strong>B&Z ID todavía no está activo.</strong> El listado básico sigue disponible, pero la moderación requiere ejecutar <code>202609220001_bz_identity.sql</code> en Supabase.</p>}
       <p class="admin-message" data-admin-message hidden aria-live="polite"></p>
 
       <section class="admin-workspace" id="juegos">
@@ -228,21 +306,47 @@ const serializedGames = games.map((game) => ({
       </section>
 
       <section class="admin-workspace" id="usuarios">
-        <div class="admin-section-heading"><div><p class="kicker">Comunidad</p><h2>Usuarios y calificaciones</h2></div><p>Consultá las cuentas registradas, su estado de verificación y las puntuaciones que dejaron en cada juego.</p></div>
+        <div class="admin-section-heading"><div><p class="kicker">Identidad central</p><h2>Usuarios, moderación y apelaciones</h2></div><p>Consultá cada B&Z ID, sus juegos vinculados y calificaciones. Las medidas se registran con motivo, alcance, duración y responsable.</p></div>
         {!accountsError && accountUsers.length === 0 && <div class="admin-empty admin-panel"><strong>Sin usuarios registrados</strong><p>Las nuevas cuentas aparecerán en esta sección.</p></div>}
         {!accountsError && accountUsers.length > 0 && <div class="admin-account-list">
           {accountUsers.map((account) => (
             <details class="admin-account-card">
               <summary>
                 <span class="admin-account-avatar" aria-hidden="true">{account.username.slice(0, 2).toUpperCase()}</span>
-                <span class="admin-account-identity"><strong>{account.username}</strong><small>{account.email}</small></span>
-                <span class:list={['admin-account-state', { 'is-verified': account.confirmed }]}>{account.confirmed ? 'Verificado' : 'Pendiente'}</span>
+                <span class="admin-account-identity"><strong>{account.username}</strong><small>{account.publicId ?? 'Sin B&Z ID'} · {account.email}</small></span>
+                <span class:list={['admin-account-state', { 'is-verified': account.status === 'active' }]}>{account.status ? PLAYER_STATUS_LABELS[account.status] : (account.confirmed ? 'Verificado' : 'Pendiente')}</span>
                 <span class="admin-account-count"><strong>{account.ratings.length}</strong><small>{account.ratings.length === 1 ? 'calificación' : 'calificaciones'}</small></span>
                 <span class="admin-account-expand" aria-hidden="true">⌄</span>
               </summary>
               <div class="admin-account-content">
                 <div class="admin-account-dates"><span>Registro: <strong>{accountDateFormatter.format(new Date(account.createdAt))}</strong></span><span>Último acceso: <strong>{account.lastSignIn ? accountDateFormatter.format(new Date(account.lastSignIn)) : 'Sin ingresos'}</strong></span></div>
+                <div class="admin-identity-grid">
+                  <section><h4>Juegos vinculados</h4>{account.linkedGames.length ? account.linkedGames.map((link) => <p><strong>{link.gameName}</strong> · {link.displayName || link.platform} · {link.status}</p>) : <p>Sin vinculaciones.</p>}</section>
+                  <section><h4>Medidas activas</h4>{account.moderation.length ? account.moderation.map((measure) => <p><strong>{MODERATION_ACTION_LABELS[measure.action]}</strong> · {measure.scope}<br /><small>{measure.message}</small></p>) : <p>Sin medidas activas.</p>}</section>
+                  <section class="admin-appeals"><h4>Apelaciones</h4>{account.appeals.length ? account.appeals.map((appeal) => <article><p><strong>{appeal.status.replace('_', ' ')}</strong> · {accountDateFormatter.format(new Date(appeal.createdAt))}<br /><small>{appeal.message}</small>{appeal.decision && <small>Resolución: {appeal.decision}</small>}</p>{['submitted', 'under_review'].includes(appeal.status) && <form method="post"><input type="hidden" name="action" value="review-appeal" /><input type="hidden" name="appeal_id" value={appeal.id} /><select name="appeal_status" aria-label="Resolución" required><option value="accepted">Aceptar</option><option value="partially_accepted">Aceptar parcialmente</option><option value="rejected">Rechazar</option></select><textarea name="decision" minlength="10" maxlength="2000" rows="3" placeholder="Explicación visible para el jugador" required></textarea><button class="button button--ghost button--small" type="submit">Resolver</button></form>}</article>) : <p>Sin apelaciones.</p>}</section>
+                </div>
                 {account.ratings.length ? <div class="admin-rating-list">{account.ratings.map((rating) => <article><div>{rating.game ? <a href={`/juegos/${rating.game.slug}/`} target="_blank" rel="noreferrer"><strong>{rating.game.name}</strong></a> : <strong>Juego no disponible</strong>}<small>{accountDateFormatter.format(new Date(rating.updatedAt))}</small></div><span aria-label={`${rating.score} de 5 estrellas`}>{'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}</span></article>)}</div> : <p class="admin-account-empty">Este usuario todavía no calificó ningún juego.</p>}
+                {account.playerId && <div class="admin-moderation-zone">
+                  <form class="admin-form admin-moderation-form" method="post">
+                    <input type="hidden" name="action" value="moderate-player" /><input type="hidden" name="player_id" value={account.playerId} />
+                    <h4>Aplicar medida</h4>
+                    <div class="admin-form-grid">
+                      <div class="admin-field"><label>Medida</label><select name="action_type" required>{Object.entries(MODERATION_ACTION_LABELS).map(([value, label]) => <option value={value}>{label}</option>)}</select></div>
+                      <div class="admin-field"><label>Código de motivo</label><input name="reason_code" pattern="[a-z0-9_]{3,60}" placeholder="abuso_calificaciones" required /></div>
+                      <div class="admin-field"><label>Duración en días</label><input name="duration_days" type="number" min="1" max="365" placeholder="Solo para suspensión temporal" /></div>
+                      <div class="admin-field"><label>Juego alcanzado</label><select name="game_id"><option value="">Ninguno / alcance central</option>{games.map((game) => <option value={game.id}>{game.name}</option>)}</select></div>
+                      <div class="admin-field admin-field--full"><label>Mensaje visible para el usuario</label><textarea name="user_message" minlength="10" maxlength="1000" rows="3" required></textarea></div>
+                      <div class="admin-field admin-field--full"><label>Nota interna</label><textarea name="internal_note" maxlength="4000" rows="3"></textarea></div>
+                    </div>
+                    <p class="admin-form-help">Advertencias y restricciones: moderador. Bloqueos indefinidos/restauración: moderador sénior. Bloqueo global: administrador.</p>
+                    <button class="button button--danger button--small" type="submit" onclick="return confirm('¿Aplicar esta medida y dejarla registrada en auditoría?')">Registrar medida</button>
+                  </form>
+                  {adminRole === 'owner' && <form class="admin-delete-account" method="post" onsubmit={`return confirm('¿Eliminar definitivamente la cuenta ${account.username}?')`}>
+                    <input type="hidden" name="action" value="delete-player" /><input type="hidden" name="player_id" value={account.playerId} /><input type="hidden" name="username" value={account.username} />
+                    <label>Eliminación definitiva: escribí <strong>{account.username}</strong><input name="confirmation" autocomplete="off" required /></label>
+                    <button class="button button--danger button--small" type="submit">Eliminar cuenta</button>
+                  </form>}
+                </div>}
               </div>
             </details>
           ))}

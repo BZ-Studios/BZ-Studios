@@ -104,7 +104,10 @@ export const termsDocument: LegalDocument = {
       title: '11. Suspensión y eliminación de cuentas',
       paragraphs: [
         'Podemos limitar o suspender una cuenta cuando existan indicios razonables de fraude, manipulación de calificaciones, riesgos de seguridad, incumplimiento de estos términos o requerimientos legales. Cuando sea posible, evaluaremos el contexto antes de adoptar una medida definitiva.',
+        'B&Z ID separa la identidad central de las cuentas o partidas de cada juego. Una medida puede limitar únicamente una función —por ejemplo, calificar—, una cuenta de juego concreta, un juego completo o, ante infracciones graves o reiteradas, todo el ecosistema. Vincular, desvincular o crear otra cuenta de juego no elimina una medida vigente ni autoriza a evadirla.',
+        'Las medidas se registran con su motivo, alcance, fecha de inicio, duración cuando corresponda y un mensaje comprensible. Salvo que la seguridad de la investigación o una obligación legal lo impida, la persona afectada puede consultar la medida desde su perfil y presentar una apelación. La revisión puede confirmar, modificar o dejar sin efecto la decisión; no garantiza un resultado favorable.',
         'Podés solicitar o ejecutar la eliminación de tu cuenta desde el perfil. La eliminación comprende el perfil y las calificaciones asociadas, sin perjuicio de datos que deban conservarse temporalmente por seguridad, respaldo técnico, cumplimiento legal o defensa de derechos, según se explica en la Política de Privacidad.',
+        'Desvincular un juego, borrar su partida y eliminar el B&Z ID son acciones diferentes. Cuando un juego incorpore la integración, informaremos el alcance de cada acción antes de confirmarla. Eliminar el B&Z ID no borra automáticamente datos que un proveedor o plataforma independiente deba administrar bajo sus propias reglas.',
       ],
     },
     {
@@ -138,7 +141,7 @@ export const termsDocument: LegalDocument = {
     { label: 'Ley 24.240 de Defensa del Consumidor — texto actualizado', href: 'https://www.argentina.gob.ar/normativa/nacional/638/actualizacion' },
     { label: 'Código Civil y Comercial de la Nación — Ley 26.994', href: 'https://www.argentina.gob.ar/normativa/nacional/235975' },
   ],
-  updatedAt: '21 de septiembre de 2026',
+  updatedAt: '22 de septiembre de 2026',
 };
 
 export const privacyDocument: LegalDocument = {
@@ -161,8 +164,10 @@ export const privacyDocument: LegalDocument = {
       paragraphs: ['Según la función que utilices, podemos tratar las siguientes categorías:'],
       items: [
         'Datos de cuenta: correo electrónico, nombre de usuario, identificador interno, fecha de registro, confirmación del correo y fecha del último acceso.',
+        'Datos de B&Z ID: identificador público, estado de la identidad central, cuentas de juegos vinculadas, plataforma, identificadores técnicos externos, fecha de vinculación y última verificación. Los códigos de vinculación se almacenan de forma temporal y protegida, no en texto legible.',
         'Datos de autenticación y seguridad: sesiones, eventos necesarios para prevenir accesos no autorizados y metadatos técnicos gestionados por el proveedor de autenticación. B&Z Studios no puede ver tu contraseña en texto legible.',
         'Actividad de juegos: puntuaciones asignadas, juego calificado y fechas de creación o modificación de la calificación.',
+        'Datos de integridad y moderación: reportes, casos, motivo y alcance de medidas, advertencias, suspensiones, bloqueos, apelaciones, resoluciones y eventos de auditoría necesarios para proteger las cuentas y evitar que una sanción vigente sea eludida mediante nuevas vinculaciones.',
         'Comunicaciones: nombre, correo, categoría y contenido que ingresás voluntariamente en el formulario de contacto.',
         'Datos técnicos básicos: dirección IP, tipo de navegador, dispositivo, solicitudes y registros de error que los proveedores de alojamiento, seguridad o autenticación puedan generar para operar y proteger el servicio.',
       ],
@@ -179,11 +184,13 @@ export const privacyDocument: LegalDocument = {
       paragraphs: ['Utilizamos los datos para fines concretos y vinculados con el servicio:'],
       items: [
         'crear, confirmar y mantener la cuenta;',
+        'crear y operar una identidad B&Z ID, vincular de forma segura cuentas de juegos compatibles y mostrarte su estado;',
         'permitir inicio de sesión, recuperación y cambio de contraseña;',
         'verificar que el nombre de usuario sea válido y único;',
         'guardar, mostrar de forma agregada y permitir administrar calificaciones;',
         'responder consultas, sugerencias y reportes;',
         'mantener la seguridad, investigar abusos y prevenir fraude o automatizaciones;',
+        'aplicar medidas proporcionales con alcance definido, tramitar apelaciones y conservar una trazabilidad interna de decisiones sensibles;',
         'diagnosticar errores, mantener la disponibilidad y mejorar la experiencia;',
         'cumplir obligaciones legales y atender requerimientos válidos de autoridades competentes.',
       ],
@@ -231,6 +238,8 @@ export const privacyDocument: LegalDocument = {
       title: '10. Plazos de conservación',
       paragraphs: [
         'Los datos de cuenta se conservan mientras la cuenta permanezca activa. Las calificaciones se conservan hasta que las elimines, elimines la cuenta o resulte necesario retirarlas por incumplimiento. Los mensajes de contacto se conservan durante el tiempo razonablemente necesario para responder, dar seguimiento y mantener un registro básico de la consulta.',
+        'Los intentos y códigos de vinculación vencen y se eliminan o anonimizan cuando dejan de ser necesarios. Los datos de una cuenta de juego desvinculada dejan de utilizarse para iniciar sesiones o sincronizar actividad, aunque puede mantenerse un registro mínimo de la operación para seguridad y resolución de disputas.',
+        'Los casos de moderación, apelaciones y eventos de auditoría pueden conservarse durante un período limitado después del cierre o eliminación cuando sea necesario para investigar fraude, impedir evasiones, demostrar cómo se tomó una decisión o atender obligaciones legales. El acceso queda restringido al personal autorizado según su función.',
         'Después de una eliminación pueden subsistir copias temporales en respaldos, registros de seguridad o sistemas de recuperación hasta completar sus ciclos técnicos. También podemos conservar información mínima cuando una norma lo exija o cuando resulte necesaria para investigar fraude, resolver disputas o defender derechos.',
       ],
     },
@@ -257,7 +266,8 @@ export const privacyDocument: LegalDocument = {
     {
       title: '13. Cómo ejercer tus derechos o eliminar la cuenta',
       paragraphs: [
-        'Podés cambiar el nombre de usuario, la contraseña y administrar calificaciones desde “Mi perfil”. La eliminación definitiva de la cuenta también puede iniciarse desde esa sección mediante una nueva verificación de contraseña.',
+        'Podés cambiar el nombre de usuario, la contraseña, administrar calificaciones y descargar una copia estructurada de tus datos desde “Mi B&Z ID”. La eliminación definitiva de la identidad central también puede iniciarse desde esa sección mediante una nueva verificación de contraseña y una confirmación explícita.',
+        'Cuando existan juegos compatibles, desde el mismo espacio podrás consultar vinculaciones y pedir su desvinculación. Una apelación de moderación se presenta desde la medida correspondiente; se conserva junto con el caso para que el equipo revisor pueda evaluar el contexto y comunicar la resolución.',
         'Para una solicitud más amplia, utilizá el formulario de contacto e incluí el correo asociado y una descripción clara. No envíes la contraseña. Responderemos por un medio que permita verificar la recepción y proteger la cuenta frente a solicitudes fraudulentas.',
       ],
     },
@@ -292,5 +302,5 @@ export const privacyDocument: LegalDocument = {
     { label: 'AAIP — Derechos sobre tus datos personales', href: 'https://www.argentina.gob.ar/aaip/datospersonales/derechos' },
     { label: 'AAIP — Transferencias internacionales de datos', href: 'https://www.argentina.gob.ar/transferencias-internacionales' },
   ],
-  updatedAt: '21 de septiembre de 2026',
+  updatedAt: '22 de septiembre de 2026',
 };

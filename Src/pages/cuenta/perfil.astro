@@ -1,20 +1,128 @@
 ---
+export const prerender = false;
+
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { createAdminAuthClient, getAccount, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
-const { supabase, user } = await getAccount(Astro.request, Astro.cookies); if(!user||!supabase)return Astro.redirect(`/cuenta/login/?next=${encodeURIComponent('/cuenta/perfil/')}`);
-let notice='',error='';
-if(Astro.request.method==='POST'){
- const form=await Astro.request.formData(), action=String(form.get('action')??'');
- if(!sameOrigin(Astro.request))error='Solicitud no válida.';
- else if(action==='username'){const username=String(form.get('username')??'').trim();if(!usernamePattern.test(username))error='El usuario no es válido.';else{const result=await supabase.from('profiles').update({username}).eq('user_id',user.id);error=result.error?'Ese nombre no está disponible.':'';notice=error?'':'Nombre actualizado.';}}
- else if(action==='password'||action==='delete-account'){const current=String(form.get('current_password')??'');const auth=await supabase.auth.signInWithPassword({email:user.email??'',password:current});if(auth.error)error='La contraseña actual no es correcta.';else if(action==='password'){const password=String(form.get('password')??'');if(!validPassword(password))error='Usá 8 caracteres como mínimo, mayúscula, minúscula, número y símbolo.';else{const result=await supabase.auth.updateUser({password});error=result.error?.message??'';notice=error?'':'Contraseña actualizada.';}}else{const admin=createAdminAuthClient();if(!admin)error='Falta configurar SUPABASE_SECRET_KEY para eliminar cuentas.';else{const result=await admin.auth.admin.deleteUser(user.id);if(result.error)error='No pudimos eliminar la cuenta.';else{await supabase.auth.signOut();return Astro.redirect('/?cuenta=eliminada',303);}}}}
- else if(action==='delete-rating'){const result=await supabase.rpc('delete_game_rating',{p_game_id:String(form.get('game_id')??'')});error=result.error?'No pudimos eliminar la calificación.':'';notice=error?'':'Calificación eliminada.';}
+import { MODERATION_ACTION_LABELS, PLAYER_STATUS_LABELS, type BzIdentityPayload } from '../../config/bzId';
+
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
+if (!user || !supabase) return Astro.redirect(`/cuenta/login/?next=${encodeURIComponent('/cuenta/perfil/')}`);
+
+let notice = Astro.url.searchParams.get('notice') ?? '';
+let error = '';
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+  if (!sameOrigin(Astro.request)) error = 'Solicitud no válida.';
+  else if (action === 'username') {
+    const username = String(form.get('username') ?? '').trim();
+    if (!usernamePattern.test(username)) error = 'Usá entre 3 y 24 letras, números o guiones bajos, sin espacios.';
+    else {
+      const result = await supabase.from('profiles').update({ username }).eq('user_id', user.id);
+      error = result.error ? (result.error.message.includes('ACCOUNT_RESTRICTED') ? 'Tu cuenta no puede modificar el perfil mientras tenga una restricción activa.' : 'Ese nombre no está disponible.') : '';
+      notice = error ? '' : 'Nombre actualizado también en tu B&Z ID.';
+    }
+  } else if (action === 'appeal') {
+    const caseId = String(form.get('case_id') ?? '');
+    const message = String(form.get('message') ?? '').trim();
+    const { data: player } = await supabase.from('players').select('id').eq('auth_user_id', user.id).maybeSingle();
+    if (!player) error = 'Primero debe aplicarse la migración de B&Z ID en Supabase.';
+    else if (!caseId || message.length < 20 || message.length > 2000) error = 'La apelación debe explicar el caso en entre 20 y 2000 caracteres.';
+    else {
+      const result = await supabase.from('moderation_appeals').insert({ case_id: caseId, player_id: player.id, message });
+      error = result.error ? (result.error.code === '23505' ? 'Ya existe una apelación abierta para este caso.' : 'No pudimos enviar la apelación.') : '';
+      notice = error ? '' : 'Apelación enviada. Podés consultar su estado en esta misma página.';
+    }
+  } else if (action === 'password' || action === 'delete-account') {
+    const current = String(form.get('current_password') ?? '');
+    const auth = await supabase.auth.signInWithPassword({ email: user.email ?? '', password: current });
+    if (auth.error) error = 'La contraseña actual no es correcta.';
+    else if (action === 'password') {
+      const password = String(form.get('password') ?? '');
+      if (!validPassword(password)) error = 'Usá 8 caracteres como mínimo, mayúscula, minúscula, número y símbolo.';
+      else {
+        const result = await supabase.auth.updateUser({ password });
+        error = result.error?.message ?? '';
+        notice = error ? '' : 'Contraseña actualizada.';
+      }
+    } else {
+      const confirmation = String(form.get('confirmation') ?? '');
+      if (confirmation !== 'ELIMINAR') error = 'Escribí ELIMINAR para confirmar la solicitud.';
+      else {
+        const admin = createAdminAuthClient();
+        if (!admin) error = 'Falta configurar SUPABASE_SECRET_KEY para eliminar cuentas.';
+        else {
+          const { data: player } = await admin.from('players').select('id').eq('auth_user_id', user.id).maybeSingle();
+          if (player) {
+            await admin.from('account_deletion_requests').insert({ player_id: player.id, requested_by: user.id, request_type: 'delete_bz_id', status: 'processing', verified_at: new Date().toISOString() });
+            await admin.from('security_audit_events').insert({ player_id: player.id, actor_user_id: user.id, event_type: 'self_service_account_deletion', target_type: 'player', target_id: player.id });
+          }
+          const result = await admin.auth.admin.deleteUser(user.id);
+          if (result.error) error = 'No pudimos eliminar la cuenta.';
+          else {
+            await supabase.auth.signOut();
+            return Astro.redirect('/?cuenta=eliminada', 303);
+          }
+        }
+      }
+    }
+  } else if (action === 'delete-rating') {
+    const result = await supabase.rpc('delete_game_rating', { p_game_id: String(form.get('game_id') ?? '') });
+    error = result.error ? 'No pudimos eliminar la calificación.' : '';
+    notice = error ? '' : 'Calificación eliminada.';
+  }
 }
-const [{data:profile},{data:ratings}]=await Promise.all([supabase.from('profiles').select('username').eq('user_id',user.id).single(),supabase.from('game_ratings').select('game_id,score,updated_at,games(name,slug)').order('updated_at',{ascending:false})]);
+
+const [{ data: profile }, { data: ratings }, identityResult] = await Promise.all([
+  supabase.from('profiles').select('username').eq('user_id', user.id).single(),
+  supabase.from('game_ratings').select('game_id,score,updated_at,games(name,slug)').order('updated_at', { ascending: false }),
+  supabase.rpc('get_my_bz_id_data'),
+]);
+
 type RelatedGame = { name: string; slug: string };
-const profileRatings=(ratings??[]).map((rating)=>{
- const relation=rating.games as unknown as RelatedGame|RelatedGame[]|null;
- return {...rating,game:Array.isArray(relation)?relation[0]??null:relation};
+const profileRatings = (ratings ?? []).map((rating) => {
+  const relation = rating.games as unknown as RelatedGame | RelatedGame[] | null;
+  return { ...rating, game: Array.isArray(relation) ? relation[0] ?? null : relation };
 });
+const bzId = (!identityResult.error && identityResult.data ? identityResult.data : null) as BzIdentityPayload | null;
+const identityReady = Boolean(bzId?.identity);
+const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' });
+const activeAppealCases = new Set((bzId?.appeals ?? []).filter((appeal) => ['submitted', 'under_review'].includes(appeal.status)).map((appeal) => appeal.caseId));
 ---
-<AccountLayout title="Mi perfil"><div class="profile-stack">{notice&&<p class="form-status" role="status">{notice}</p>}{error&&<p class="form-status is-error" role="alert">{error}</p>}<section><h2>Datos de la cuenta</h2><p><strong>Correo:</strong> {user.email} {user.email_confirmed_at?'· Verificado':'· Pendiente de verificar'}</p><form class="account-form" method="post"><input type="hidden" name="action" value="username"/><label>Nombre de usuario<input name="username" value={profile?.username??''} minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required/></label><button class="button button--ghost" type="submit">Guardar nombre</button></form></section><section><h2>Mis calificaciones</h2>{profileRatings.length ? <div class="profile-ratings">{profileRatings.map((rating)=><article><div>{rating.game?<a href={`/juegos/${rating.game.slug}/`}><strong>{rating.game.name}</strong></a>:<strong>Juego no disponible</strong>}<span aria-label={`${rating.score} de 5 estrellas`}>{'★'.repeat(rating.score)}{'☆'.repeat(5-rating.score)}</span></div><form method="post"><input type="hidden" name="action" value="delete-rating"/><input type="hidden" name="game_id" value={rating.game_id}/><button class="text-link" type="submit">Eliminar</button></form></article>)}</div>:<p>Todavía no calificaste ningún juego.</p>}</section><section><h2>Cambiar contraseña</h2><form class="account-form" method="post"><input type="hidden" name="action" value="password"/><label>Contraseña actual<input name="current_password" type="password" autocomplete="current-password" required/></label><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="8" required/><small>8 caracteres como mínimo, con mayúscula, minúscula, número y símbolo.</small></label><button class="button button--ghost" type="submit">Cambiar contraseña</button></form></section><section class="danger-zone"><h2>Eliminar cuenta</h2><p>Se eliminarán tu perfil y tus calificaciones de forma definitiva.</p><form class="account-form" method="post" onsubmit="return confirm('¿Eliminar definitivamente tu cuenta y tus datos?')"><input type="hidden" name="action" value="delete-account"/><label>Confirmá tu contraseña<input name="current_password" type="password" autocomplete="current-password" required/></label><button class="button button--danger" type="submit">Eliminar mi cuenta</button></form></section></div></AccountLayout>
+<AccountLayout title="Mi B&Z ID" description="Administrá tu identidad de jugador, seguridad, juegos vinculados, calificaciones y derechos de privacidad.">
+  <div class="profile-stack">
+    {notice && <p class="form-status" role="status">{notice}</p>}
+    {error && <p class="form-status is-error" role="alert">{error}</p>}
+
+    <section class="identity-hero">
+      <div><p class="kicker">Identidad central</p><h2>{bzId?.identity.publicId ?? 'B&Z ID pendiente'}</h2><p>Tu identidad central para el sitio y, más adelante, para los videojuegos oficiales de B&Z Studios.</p></div>
+      <span class:list={['identity-status', `is-${bzId?.identity.status ?? 'pending'}`]}>{identityReady ? PLAYER_STATUS_LABELS[bzId!.identity.status] : 'Requiere migración'}</span>
+    </section>
+    {!identityReady && <p class="identity-note"><strong>Configuración pendiente:</strong> tu cuenta actual sigue funcionando. Para activar B&Z ID hay que ejecutar la migración <code>202609220001_bz_identity.sql</code> en Supabase.</p>}
+
+    <section>
+      <div class="profile-section-heading"><div><p class="kicker">Cuenta</p><h2>Datos y seguridad</h2></div><a class="button button--ghost button--small" href="/cuenta/exportar.json">Exportar mis datos</a></div>
+      <dl class="identity-details">
+        <div><dt>Correo</dt><dd>{user.email} <small>{user.email_confirmed_at ? 'Verificado' : 'Pendiente de verificar'}</small></dd></div>
+        <div><dt>Estado</dt><dd>{identityReady ? PLAYER_STATUS_LABELS[bzId!.identity.status] : 'Cuenta web activa'}</dd></div>
+        {bzId?.identity.createdAt && <div><dt>Creación</dt><dd>{dateFormatter.format(new Date(bzId.identity.createdAt))}</dd></div>}
+      </dl>
+      <form class="account-form" method="post"><input type="hidden" name="action" value="username" /><label>Nombre de usuario<input name="username" value={profile?.username ?? ''} minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required /><small>Es único en B&Z ID. Solo letras, números y guion bajo; sin espacios.</small></label><button class="button button--ghost" type="submit">Guardar nombre</button></form>
+    </section>
+
+    <section>
+      <p class="kicker">Ecosistema</p><h2>Juegos vinculados</h2>
+      {bzId?.gameAccounts.length ? <div class="linked-games">{bzId.gameAccounts.map((account) => <article><div><strong>{account.gameName}</strong><span>{account.displayName || account.platform}</span></div><span class="identity-status">{account.status}</span></article>)}</div> : <div class="identity-empty"><strong>No hay juegos vinculados</strong><p>La vinculación se habilitará juego por juego mediante un código temporal generado por el servidor oficial. No te pediremos la contraseña del juego.</p><button class="button button--ghost" type="button" disabled title="Disponible cuando un juego integre B&Z ID">Vincular un juego · próximamente</button></div>}
+    </section>
+
+    <section>
+      <p class="kicker">Moderación transparente</p><h2>Estado, medidas y apelaciones</h2>
+      {bzId?.moderation.length ? <div class="moderation-list">{bzId.moderation.map((measure) => <article><div><strong>{MODERATION_ACTION_LABELS[measure.action] ?? measure.action}</strong><p>{measure.message}</p><small>Alcance: {measure.scope} · Desde {dateFormatter.format(new Date(measure.startsAt))}{measure.endsAt ? ` hasta ${dateFormatter.format(new Date(measure.endsAt))}` : ''}</small></div>{measure.caseId && !activeAppealCases.has(measure.caseId) && <form class="account-form appeal-form" method="post"><input type="hidden" name="action" value="appeal" /><input type="hidden" name="case_id" value={measure.caseId} /><label>Explicá tu apelación<textarea name="message" minlength="20" maxlength="2000" rows="4" required></textarea></label><button class="button button--ghost button--small" type="submit">Enviar apelación</button></form>}</article>)}</div> : <p class="identity-empty">No tenés medidas de moderación activas.</p>}
+      {bzId?.appeals.length ? <div class="appeal-history"><h3>Historial de apelaciones</h3>{bzId.appeals.map((appeal) => <article><strong>{appeal.status.replace('_', ' ')}</strong><p>{appeal.message}</p>{appeal.decision && <small>Resolución: {appeal.decision}</small>}</article>)}</div> : null}
+    </section>
+
+    <section><h2>Mis calificaciones</h2>{profileRatings.length ? <div class="profile-ratings">{profileRatings.map((rating) => <article><div>{rating.game ? <a href={`/juegos/${rating.game.slug}/`}><strong>{rating.game.name}</strong></a> : <strong>Juego no disponible</strong>}<span aria-label={`${rating.score} de 5 estrellas`}>{'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}</span></div><form method="post"><input type="hidden" name="action" value="delete-rating" /><input type="hidden" name="game_id" value={rating.game_id} /><button class="text-link" type="submit">Eliminar</button></form></article>)}</div> : <p>Todavía no calificaste ningún juego.</p>}</section>
+    <section><h2>Cambiar contraseña</h2><form class="account-form" method="post"><input type="hidden" name="action" value="password" /><label>Contraseña actual<input name="current_password" type="password" autocomplete="current-password" required /></label><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="8" required /><small>8 caracteres como mínimo, con mayúscula, minúscula, número y símbolo.</small></label><button class="button button--ghost" type="submit">Cambiar contraseña</button></form></section>
+    <section class="danger-zone"><h2>Eliminar B&Z ID</h2><p>Esta acción elimina la identidad central, el perfil web, las vinculaciones y las calificaciones. Algunos registros mínimos de seguridad o cumplimiento pueden conservarse por un plazo limitado, tal como explica la Política de Privacidad.</p><form class="account-form" method="post" onsubmit="return confirm('¿Eliminar definitivamente tu B&Z ID y los datos asociados?')"><input type="hidden" name="action" value="delete-account" /><label>Contraseña actual<input name="current_password" type="password" autocomplete="current-password" required /></label><label>Escribí ELIMINAR<input name="confirmation" pattern="ELIMINAR" autocomplete="off" required /></label><button class="button button--danger" type="submit">Eliminar mi B&Z ID</button></form></section>
+  </div>
+</AccountLayout>
