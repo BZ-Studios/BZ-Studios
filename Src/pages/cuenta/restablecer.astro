@@ -1,5 +1,6 @@
 ---
 import AccountLayout from '../../layouts/AccountLayout.astro';
+import PasswordEye from '../../components/PasswordEye.astro';
 import { getAccount, sameOrigin, validPassword } from '../../lib/account';
 const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
 let error = '';
@@ -24,8 +25,8 @@ if (Astro.request.method === 'POST') {
   <form class="account-form" method="post" data-password-form novalidate>
     {error && <p class="form-status is-error" role="alert">{error}</p>}
     {changed ? <div class="account-notice"><strong>Contraseña actualizada</strong><p>Ya podés continuar usando tu cuenta.</p><a class="button button--primary" href="/cuenta/perfil/">Ir a mi perfil</a></div> : <>
-      <div class="account-field"><label for="reset-password">Nueva contraseña</label><div class="account-password-control"><input id="reset-password" name="password" type="password" autocomplete="new-password" minlength="8" data-password required /><button type="button" data-password-toggle aria-controls="reset-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div><small>8 caracteres como mínimo, con mayúscula, minúscula, número y símbolo.</small><span class="field-feedback" data-password-feedback aria-live="polite"></span></div>
-      <div class="account-field"><label for="reset-confirmation">Confirmar contraseña</label><div class="account-password-control"><input id="reset-confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="8" data-password-confirmation required /><button type="button" data-password-toggle aria-controls="reset-confirmation" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div><span class="field-feedback" data-confirmation-feedback aria-live="polite"></span></div>
+      <div class="account-field"><label for="reset-password">Nueva contraseña</label><div class="account-password-control"><input id="reset-password" name="password" type="password" autocomplete="new-password" minlength="8" data-password required /><button type="button" data-password-toggle aria-controls="reset-password" aria-label="Mostrar contraseña" aria-pressed="false"><PasswordEye /></button></div><small>8 caracteres como mínimo, con mayúscula, minúscula, número y símbolo.</small><span class="field-feedback" data-password-feedback aria-live="polite"></span></div>
+      <div class="account-field"><label for="reset-confirmation">Confirmar contraseña</label><div class="account-password-control"><input id="reset-confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="8" data-password-confirmation required /><button type="button" data-password-toggle aria-controls="reset-confirmation" aria-label="Mostrar contraseña" aria-pressed="false"><PasswordEye /></button></div><span class="field-feedback" data-confirmation-feedback aria-live="polite"></span></div>
       <button class="button button--primary" type="submit">Actualizar contraseña</button>
     </>}
   </form>

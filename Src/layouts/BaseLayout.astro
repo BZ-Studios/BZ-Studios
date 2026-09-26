@@ -100,6 +100,7 @@ const baseSchema = {
     <main id="contenido"><slot /></main>
     <Footer />
 <script>
+  import '../scripts/dialogs';
   // One observer, no scroll listeners; content stays visible without JavaScript.
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (!motionPreference.matches && 'IntersectionObserver' in window) {
@@ -130,6 +131,21 @@ const baseSchema = {
   window.addEventListener('resize', scheduleProgressUpdate);
   window.addEventListener('pageshow', updateScrollProgress);
   updateScrollProgress();
+
+  document.querySelectorAll<HTMLElement>('[data-card-href]').forEach((card) => {
+    const destination = card.dataset.cardHref;
+    if (!destination) return;
+    card.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a,button,input,select,textarea')) return;
+      window.location.assign(destination);
+    });
+    card.addEventListener('keydown', (event) => {
+      if ((event.key === 'Enter' || event.key === ' ') && event.target === card) {
+        event.preventDefault();
+        window.location.assign(destination);
+      }
+    });
+  });
 </script>
   </body>
 </html>

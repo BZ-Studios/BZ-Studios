@@ -7,7 +7,7 @@ const { game } = Astro.props;
 const monogram = game.name.split(/\s+/).map((word) => word[0]).join('').slice(0, 3).toUpperCase();
 ---
 
-<article class="game-card" data-genre={game.genres.join('|')}>
+<article class="game-card" data-genre={game.genres.join('|')} data-card-href={`/juegos/${game.slug}/`} tabindex="0">
   <a class="game-card__media" href={`/juegos/${game.slug}/`} aria-label={`Ver información de ${game.name}`}>
     {game.cover ? (
       <img src={game.cover} alt={`Portada de ${game.name}`} loading="lazy" width="720" height="480" />
@@ -29,7 +29,7 @@ const monogram = game.name.split(/\s+/).map((word) => word[0]).join('').slice(0,
     <RatingSummary average={game.ratingAverage} count={game.ratingCount} compact />
     <div class="game-card__actions">
       {game.playUrl && game.status !== 'Próximamente' && (
-        <a class="button button--primary button--small" href={game.playUrl} target="_blank" rel="noreferrer">Jugar <span aria-hidden="true">↗</span></a>
+        <a class="button button--primary button--small" data-card-play href={game.playUrl} target="_blank" rel="noreferrer">Jugar <span aria-hidden="true">↗</span></a>
       )}
       <a class="text-link" href={`/juegos/${game.slug}/`}>Más información <span aria-hidden="true">→</span></a>
     </div>

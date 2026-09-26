@@ -8,6 +8,8 @@ Para habilitar cuentas y calificaciones, ejecutá después `migrations/202609190
 
 Para activar la identidad central, moderación, apelaciones y auditoría, ejecutá por último `migrations/202609220001_bz_identity.sql`. Es una migración idempotente: crea un B&Z ID para cada perfil existente y conserva las columnas anteriores durante la transición. Antes de ejecutarla en producción conviene exportar un respaldo de `profiles`, `game_ratings` y `admins`.
 
+Después ejecutá `migrations/202609230001_profile_ux.sql`. Esta migración habilita el primer cambio gratuito de nombre de usuario, aplica una espera de tres meses a partir del segundo cambio e impide saltarse la regla mediante una actualización directa.
+
 En **Authentication > URL Configuration** agregá `https://bzstudios.com.ar/**` a las URLs de redirección. Conservá activada la confirmación de correo. Supabase aplica límites de frecuencia y el formulario agrega un campo trampa contra bots; si más adelante se habilita CAPTCHA en Supabase, primero deberá integrarse su widget y enviar el token desde ambos formularios.
 
 En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para consultar usuarios y calificaciones en el dashboard y permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.
@@ -40,6 +42,23 @@ En **Authentication → URL Configuration**:
 - Redirect URL de producción: el mismo dominio terminado en `/**`.
 - Redirect URL local opcional: `http://localhost:4321/**`.
 
+### Verificación por código
+
+El registro lleva al usuario a `/cuenta/verificar/`, donde ingresa el código recibido por correo. Para que Supabase envíe el código en vez de un enlace:
+
+1. Abrí **Authentication → Email Templates → Confirm sign up**.
+2. Conservá habilitada la confirmación de correo.
+3. Reemplazá el cuerpo del mensaje por una plantilla que incluya `{{ .Token }}`. Por ejemplo:
+
+```html
+<h2>Verificá tu cuenta B&amp;Z</h2>
+<p>Tu código de verificación es:</p>
+<p style="font-size: 30px; font-weight: 800; letter-spacing: 8px;">{{ .Token }}</p>
+<p>Ingresalo en https://bzstudios.com.ar/cuenta/verificar/</p>
+```
+
+4. Guardá la plantilla y creá una cuenta de prueba. El código es de un solo uso y la página permite solicitar uno nuevo si venció.
+
 ## 4. Variables de entorno
 
 El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
@@ -59,9 +78,9 @@ La publishable key puede usarse en el navegador porque RLS protege los datos. La
 
 ## 5. Comprobación manual en producción
 
-1. Registrá una cuenta de prueba y confirmá el correo recibido.
+1. Registrá una cuenta de prueba, comprobá que llegue el código e ingresalo en `/cuenta/verificar/`.
 2. Iniciá sesión, calificá un juego y verificá que el promedio cambie una sola vez aunque modifiques la puntuación.
-3. Abrí **Mi perfil**, cambiá el nombre, eliminá la calificación y probá el cambio de contraseña.
+3. Abrí **Mi perfil**, realizá el primer cambio de nombre, confirmá que informe el plazo de tres meses, eliminá la calificación y probá el cambio de contraseña.
 4. Solicitá la recuperación desde `/cuenta/recuperar/` y verificá el enlace recibido.
 5. Por último, eliminá la cuenta de prueba y confirmá en **Authentication → Users** que desapareció.
 

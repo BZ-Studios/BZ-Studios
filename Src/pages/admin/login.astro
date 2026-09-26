@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import PasswordEye from '../../components/PasswordEye.astro';
 import { createSupabaseServerClient } from '../../lib/supabase';
 import { getAdminSession } from '../../lib/admin';
 
@@ -37,7 +38,7 @@ if (Astro.request.method === 'POST') {
 <AdminLayout title="Acceso privado">
   <main class="admin-login">
     <section class="admin-login__card">
-      <img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" />
+      <div class="admin-login__top"><img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" /><a href="/" aria-label="Volver al sitio"><span aria-hidden="true">←</span> Volver al sitio</a></div>
       <p class="kicker">Panel privado</p>
       <h1>Administración</h1>
       <p>Accedé con la cuenta autorizada de B&Z Studios.</p>
@@ -52,11 +53,11 @@ if (Astro.request.method === 'POST') {
           <div class="admin-password-control">
             <input id="password" name="password" type="password" autocomplete="current-password" required />
             <button type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+              <PasswordEye />
             </button>
           </div>
         </div>
-        <div class="admin-login__actions"><button class="button button--primary" type="submit">Entrar</button><a class="button button--ghost" href="/">Volver al sitio</a></div>
+        <div class="admin-login__actions"><button class="button button--primary" type="submit">Entrar</button></div>
       </form>
     </section>
   </main>

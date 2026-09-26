@@ -100,6 +100,7 @@ let accountUsers: Array<{
   username: string;
   email: string;
   confirmed: boolean;
+  accountAdminRole: AdminRole | null;
   createdAt: string;
   lastSignIn: string | null;
   linkedGames: Array<{ id: string; gameName: string; platform: string; displayName: string | null; status: string }>;
@@ -111,7 +112,7 @@ let accountUsers: Array<{
 if (!adminAuth) {
   accountsError = 'Falta configurar SUPABASE_SECRET_KEY para consultar los usuarios desde el servidor.';
 } else {
-  const [profilesResult, ratingsResult, authUsersResult, playersResult, linksResult, moderationResult, appealsResult] = await Promise.all([
+  const [profilesResult, ratingsResult, authUsersResult, playersResult, linksResult, moderationResult, appealsResult, adminsResult] = await Promise.all([
     adminAuth.from('profiles').select('user_id, username, created_at'),
     adminAuth.from('game_ratings').select('user_id, game_id, score, updated_at, games(name, slug)').order('updated_at', { ascending: false }),
     adminAuth.auth.admin.listUsers({ page: 1, perPage: 1000 }),
@@ -119,6 +120,7 @@ if (!adminAuth) {
     adminAuth.from('player_game_accounts').select('id, player_id, platform, display_name, link_status, games(name)').neq('link_status', 'unlinked'),
     adminAuth.from('moderation_actions').select('id, player_id, action_type, user_message, scope_type, starts_at, ends_at, revoked_at').is('revoked_at', null).or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`).order('created_at', { ascending: false }),
     adminAuth.from('moderation_appeals').select('id, player_id, status, message, decision, created_at').order('created_at', { ascending: false }),
+    adminAuth.from('admins').select('user_id, role'),
   ]);
   const accountError = profilesResult.error ?? ratingsResult.error ?? authUsersResult.error;
   identityReady = !playersResult.error;
@@ -130,6 +132,7 @@ if (!adminAuth) {
     const links = linksResult.data ?? [];
     const moderation = moderationResult.data ?? [];
     const appeals = appealsResult.data ?? [];
+    const administratorRoles = new Map((adminsResult.data ?? []).map((administrator) => [administrator.user_id, (administrator.role ?? 'owner') as AdminRole]));
     accountUsers = authUsersResult.data.users.map((authUser) => {
       const profile = profiles.get(authUser.id);
       const player = players.get(authUser.id);
@@ -141,6 +144,7 @@ if (!adminAuth) {
         username: profile?.username ?? `jugador_${authUser.id.slice(0, 8)}`,
         email: authUser.email ?? 'Correo no disponible',
         confirmed: Boolean(authUser.email_confirmed_at),
+        accountAdminRole: administratorRoles.get(authUser.id) ?? null,
         createdAt: authUser.created_at,
         lastSignIn: authUser.last_sign_in_at ?? null,
         linkedGames: links.filter((link) => link.player_id === player?.id).map((link) => ({ id: link.id, gameName: (Array.isArray(link.games) ? link.games[0]?.name : (link.games as { name?: string } | null)?.name) ?? 'Juego', platform: link.platform, displayName: link.display_name, status: link.link_status })),
@@ -313,7 +317,7 @@ const serializedGames = games.map((game) => ({
             <details class="admin-account-card">
               <summary>
                 <span class="admin-account-avatar" aria-hidden="true">{account.username.slice(0, 2).toUpperCase()}</span>
-                <span class="admin-account-identity"><strong>{account.username}</strong><small>{account.publicId ?? 'Sin B&Z ID'} · {account.email}</small></span>
+                <span class="admin-account-identity"><strong>{account.username}</strong>{account.accountAdminRole && <em class="admin-role-badge">Admin · {ADMIN_ROLE_LABELS[account.accountAdminRole]}</em>}<small>{account.publicId ?? 'Sin B&Z ID'} · {account.email}</small></span>
                 <span class:list={['admin-account-state', { 'is-verified': account.status === 'active' }]}>{account.status ? PLAYER_STATUS_LABELS[account.status] : (account.confirmed ? 'Verificado' : 'Pendiente')}</span>
                 <span class="admin-account-count"><strong>{account.ratings.length}</strong><small>{account.ratings.length === 1 ? 'calificación' : 'calificaciones'}</small></span>
                 <span class="admin-account-expand" aria-hidden="true">⌄</span>

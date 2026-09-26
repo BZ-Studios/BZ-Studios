@@ -1,5 +1,7 @@
 ---
 import { siteConfig, type SocialKey } from '../config/site';
+import LegalDocument from './LegalDocument.astro';
+import { privacyDocument, termsDocument } from '../config/legal';
 
 const socialLabels: Record<SocialKey, string> = {
   instagram: 'Instagram',
@@ -40,6 +42,16 @@ const footerSocialEntries = siteConfig.footerSocials.map((key) => ({
   </div>
   <div class="shell footer-bottom">
     <span>© {new Date().getFullYear()} B&Z Studios</span>
-    <nav class="footer-legal" aria-label="Información legal"><a href="/terminos/">Términos y condiciones</a><a href="/privacidad/">Política de privacidad</a></nav>
+    <nav class="footer-legal" aria-label="Información legal"><button type="button" data-modal-open="footer-terms-dialog">Términos y condiciones</button><button type="button" data-modal-open="footer-privacy-dialog">Política de privacidad</button></nav>
   </div>
+  <dialog class="account-legal-dialog" id="footer-terms-dialog" data-modal-dialog aria-labelledby="footer-terms-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{termsDocument.eyebrow}</p><h2 id="footer-terms-title">{termsDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar términos">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={termsDocument} compact /></div>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
+  </dialog>
+  <dialog class="account-legal-dialog" id="footer-privacy-dialog" data-modal-dialog aria-labelledby="footer-privacy-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{privacyDocument.eyebrow}</p><h2 id="footer-privacy-title">{privacyDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar política de privacidad">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={privacyDocument} compact /></div>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
+  </dialog>
 </footer>

@@ -1,6 +1,7 @@
 ---
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import LegalDocument from '../../components/LegalDocument.astro';
+import PasswordEye from '../../components/PasswordEye.astro';
 import { accountRedirectUrl, getAccount, safeNext, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
 import { privacyDocument, termsDocument } from '../../config/legal';
 
@@ -9,7 +10,6 @@ const next = safeNext(Astro.url.searchParams.get('next'));
 if (user) return Astro.redirect(next);
 
 let error = '';
-let sent = false;
 let username = '';
 let email = '';
 
@@ -34,14 +34,17 @@ if (Astro.request.method === 'POST') {
         email,
         password,
         options: {
-          emailRedirectTo: accountRedirectUrl(`/cuenta/callback/?next=${encodeURIComponent(next)}`),
+          emailRedirectTo: accountRedirectUrl(`/cuenta/verificar/?next=${encodeURIComponent(next)}`),
           data: { username, terms_accepted_at: new Date().toISOString() },
         },
       });
       if (result.error) error = result.error.message.includes('rate')
         ? 'Demasiados intentos. Esperá unos minutos.'
         : 'No pudimos crear la cuenta. Revisá los datos e intentá nuevamente.';
-      else sent = true;
+      else {
+        Astro.cookies.set('pending_signup_email', email, { httpOnly: true, sameSite: 'strict', secure: import.meta.env.PROD, path: '/cuenta/', maxAge: 60 * 60 });
+        return Astro.redirect(`/cuenta/verificar/?next=${encodeURIComponent(next)}`, 303);
+      }
     }
   }
 }
@@ -51,8 +54,7 @@ if (Astro.request.method === 'POST') {
   <form class="account-form" method="post" data-registration-form data-password-form novalidate>
     <input class="hp-field" name="website" tabindex="-1" autocomplete="off" />
     {error && <p class="form-status is-error" role="alert">{error}</p>}
-    {sent && <div class="account-notice" role="status"><strong>Revisá tu correo</strong><p>Te enviamos un enlace de confirmación que vuelve a <strong>bzstudios.com.ar</strong>. Abrilo para activar tu cuenta; después podrás iniciar sesión y calificar juegos.</p></div>}
-    {!sent && <>
+    <>
       <div class="account-field">
         <label for="username">Nombre de usuario</label>
         <input id="username" name="username" value={username} autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" spellcheck="false" data-username required />
@@ -62,28 +64,28 @@ if (Astro.request.method === 'POST') {
       <div class="account-field"><label for="email">Correo electrónico</label><input id="email" name="email" value={email} type="email" autocomplete="email" required /></div>
       <div class="account-field">
         <label for="register-password">Contraseña</label>
-        <div class="account-password-control"><input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" data-password required /><button type="button" data-password-toggle aria-controls="register-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+        <div class="account-password-control"><input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" data-password required /><button type="button" data-password-toggle aria-controls="register-password" aria-label="Mostrar contraseña" aria-pressed="false"><PasswordEye /></button></div>
         <small>8 caracteres como mínimo, con mayúscula, minúscula, número y símbolo.</small>
         <span class="field-feedback" data-password-feedback aria-live="polite"></span>
       </div>
       <div class="account-field">
         <label for="register-confirmation">Confirmar contraseña</label>
-        <div class="account-password-control"><input id="register-confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="8" data-password-confirmation required /><button type="button" data-password-toggle aria-controls="register-confirmation" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+        <div class="account-password-control"><input id="register-confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="8" data-password-confirmation required /><button type="button" data-password-toggle aria-controls="register-confirmation" aria-label="Mostrar contraseña" aria-pressed="false"><PasswordEye /></button></div>
         <span class="field-feedback" data-confirmation-feedback aria-live="polite"></span>
       </div>
-      <label class="account-check"><input name="terms" type="checkbox" required /><span>Acepto los <button class="account-legal-trigger" type="button" data-legal-open="terms-dialog">términos y condiciones</button> y la <button class="account-legal-trigger" type="button" data-legal-open="privacy-dialog">política de privacidad</button>.</span></label>
+      <div class="account-terms"><label class="account-check"><input name="terms" type="checkbox" data-terms required /><span>Acepto los <button class="account-legal-trigger" type="button" data-modal-open="terms-dialog">términos y condiciones</button> y la <button class="account-legal-trigger" type="button" data-modal-open="privacy-dialog">política de privacidad</button>.</span></label><span class="field-feedback is-error" data-terms-feedback aria-live="polite"></span></div>
       <button class="button button--primary" type="submit">Crear cuenta</button>
-    </>}
+    </>
   </form>
 
-  <dialog class="account-legal-dialog" id="terms-dialog" data-legal-dialog aria-labelledby="terms-dialog-title">
-    <div class="account-legal-dialog__heading"><div><p class="kicker">{termsDocument.eyebrow}</p><h2 id="terms-dialog-title">{termsDocument.title}</h2></div><button type="button" data-legal-close aria-label="Cerrar términos">×</button></div>
+  <dialog class="account-legal-dialog" id="terms-dialog" data-modal-dialog aria-labelledby="terms-dialog-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{termsDocument.eyebrow}</p><h2 id="terms-dialog-title">{termsDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar términos">×</button></div>
     <div class="account-legal-dialog__body"><LegalDocument document={termsDocument} compact /></div>
-    <button class="button button--primary" type="button" data-legal-close>Entendido</button>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
   </dialog>
-  <dialog class="account-legal-dialog" id="privacy-dialog" data-legal-dialog aria-labelledby="privacy-dialog-title">
-    <div class="account-legal-dialog__heading"><div><p class="kicker">{privacyDocument.eyebrow}</p><h2 id="privacy-dialog-title">{privacyDocument.title}</h2></div><button type="button" data-legal-close aria-label="Cerrar política de privacidad">×</button></div>
+  <dialog class="account-legal-dialog" id="privacy-dialog" data-modal-dialog aria-labelledby="privacy-dialog-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{privacyDocument.eyebrow}</p><h2 id="privacy-dialog-title">{privacyDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar política de privacidad">×</button></div>
     <div class="account-legal-dialog__body"><LegalDocument document={privacyDocument} compact /></div>
-    <button class="button button--primary" type="button" data-legal-close>Entendido</button>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
   </dialog>
 </AccountLayout>

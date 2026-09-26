@@ -28,14 +28,10 @@ document.querySelectorAll<HTMLButtonElement>('[data-password-toggle]').forEach((
   });
 });
 
-document.querySelectorAll<HTMLDialogElement>('[data-legal-dialog]').forEach((dialog) => {
-  document.querySelectorAll<HTMLButtonElement>(`[data-legal-open="${dialog.id}"]`).forEach((button) => {
-    button.addEventListener('click', () => dialog.showModal());
-  });
-  dialog.querySelectorAll<HTMLButtonElement>('[data-legal-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
-  dialog.addEventListener('click', (event) => {
-    if (event.target === dialog) dialog.close();
-  });
+const verificationEmail = document.querySelector<HTMLInputElement>('[data-verification-email]');
+const resendEmail = document.querySelector<HTMLInputElement>('[data-resend-email]');
+verificationEmail?.addEventListener('input', () => {
+  if (resendEmail) resendEmail.value = verificationEmail.value;
 });
 
 const registrationForm = document.querySelector<HTMLFormElement>('[data-registration-form]');
@@ -94,6 +90,8 @@ document.querySelectorAll<HTMLFormElement>('[data-password-form]').forEach((form
   const confirmation = form.querySelector<HTMLInputElement>('[data-password-confirmation]');
   const passwordFeedback = form.querySelector<HTMLElement>('[data-password-feedback]');
   const confirmationFeedback = form.querySelector<HTMLElement>('[data-confirmation-feedback]');
+  const terms = form.querySelector<HTMLInputElement>('[data-terms]');
+  const termsFeedback = form.querySelector<HTMLElement>('[data-terms-feedback]');
 
   const validatePassword = () => {
     if (!password) return true;
@@ -113,11 +111,22 @@ document.querySelectorAll<HTMLFormElement>('[data-password-form]').forEach((form
     if (confirmation?.value) validateConfirmation();
   });
   confirmation?.addEventListener('input', validateConfirmation);
+  terms?.addEventListener('change', () => {
+    terms.closest('.account-check')?.classList.toggle('is-invalid', !terms.checked);
+    terms.setCustomValidity(terms.checked ? '' : 'Debés aceptar los términos y la política de privacidad.');
+    if (termsFeedback) termsFeedback.textContent = terms.checked ? '' : 'Debés aceptar los términos y la política de privacidad.';
+  });
   form.addEventListener('submit', (event) => {
     form.classList.add('was-validated');
     const passwordValid = validatePassword();
     const confirmationValid = validateConfirmation();
-    if (!passwordValid || !confirmationValid || !form.checkValidity()) {
+    const termsValid = !terms || terms.checked;
+    if (terms && !termsValid) {
+      terms.setCustomValidity('Debés aceptar los términos y la política de privacidad.');
+      terms.closest('.account-check')?.classList.add('is-invalid');
+      if (termsFeedback) termsFeedback.textContent = 'Debés aceptar los términos y la política de privacidad.';
+    }
+    if (!passwordValid || !confirmationValid || !termsValid || !form.checkValidity()) {
       event.preventDefault();
       form.querySelector<HTMLInputElement>(':invalid')?.focus();
     }

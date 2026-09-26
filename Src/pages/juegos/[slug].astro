@@ -53,23 +53,26 @@ const gameSchema = {
 >
   <article>
     <header class="game-detail-hero">
-      <div class="shell game-detail-hero__grid">
-        {game.cover ? (
-          <img src={game.cover} alt={`Portada de ${game.name}`} width="900" height="600" />
-        ) : (
-          <div class="game-detail-placeholder" aria-label={`${game.name}, portada próximamente`}>
-            <span>Primer lanzamiento</span>
-            <strong>{game.name}</strong>
-          </div>
-        )}
-        <div>
-          <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
-          <p class="kicker">{game.genres.join(' · ')}</p>
-          <h1>{game.name}</h1>
-          <p class="lead">{game.description}</p>
-          <div class="button-row">
-            {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
-            {game.trailerUrl && <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>}
+      <div class="shell">
+        <a class="game-back-link" href="/juegos/"><span aria-hidden="true">←</span> Volver a juegos</a>
+        <div class="game-detail-hero__grid">
+          {game.cover ? (
+            <img src={game.cover} alt={`Portada de ${game.name}`} width="900" height="600" />
+          ) : (
+            <div class="game-detail-placeholder" aria-label={`${game.name}, portada próximamente`}>
+              <span>Primer lanzamiento</span>
+              <strong>{game.name}</strong>
+            </div>
+          )}
+          <div>
+            <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
+            <p class="kicker">{game.genres.join(' · ')}</p>
+            <h1>{game.name}</h1>
+            <p class="lead">{game.description}</p>
+            <div class="button-row">
+              {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
+              {game.trailerUrl && <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>}
+            </div>
           </div>
         </div>
       </div>

@@ -1,0 +1,55 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { accountRedirectUrl, getAccount, safeNext, sameOrigin } from '../../lib/account';
+
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
+let next = safeNext(Astro.url.searchParams.get('next'));
+if (user?.email_confirmed_at) return Astro.redirect(next);
+
+let email = Astro.cookies.get('pending_signup_email')?.value ?? '';
+let error = '';
+let notice = '';
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? 'verify');
+  next = safeNext(String(form.get('next') ?? next));
+  email = String(form.get('email') ?? '').trim();
+  if (!sameOrigin(Astro.request)) error = 'Solicitud no válida.';
+  else if (!supabase || !email) error = 'Ingresá el correo utilizado para crear la cuenta.';
+  else if (action === 'resend') {
+    const result = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: accountRedirectUrl('/cuenta/verificar/') } });
+    error = result.error ? 'No pudimos reenviar el código todavía. Esperá un minuto e intentá nuevamente.' : '';
+    notice = error ? '' : 'Enviamos un código nuevo. Revisá también la carpeta de correo no deseado.';
+  } else {
+    const token = String(form.get('token') ?? '').replace(/\s/g, '');
+    if (!/^\d{6}$/.test(token)) error = 'El código debe tener exactamente 6 números.';
+    else {
+      const result = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      if (result.error || !result.data.user) error = 'El código no es válido o ya venció. Revisalo o solicitá uno nuevo.';
+      else {
+        Astro.cookies.delete('pending_signup_email', { path: '/cuenta/' });
+        return Astro.redirect(next, 303);
+      }
+    }
+  }
+}
+---
+
+<AccountLayout title="Verificar correo" description="Activá tu cuenta B&Z mediante el código temporal enviado a tu correo.">
+  <div class="verification-intro"><p class="kicker">Código de 6 dígitos</p><p>Ingresá el código que enviamos a tu correo. Es temporal y solo puede utilizarse una vez.</p></div>
+  {error && <p class="form-status is-error" role="alert">{error}</p>}
+  {notice && <p class="form-status" role="status">{notice}</p>}
+  <form class="account-form" method="post">
+    <input type="hidden" name="action" value="verify" />
+    <input type="hidden" name="next" value={next} />
+    <label>Correo electrónico<input name="email" value={email} type="email" autocomplete="email" data-verification-email required /></label>
+    <label>Código de verificación<input class="verification-code" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="000000" required /></label>
+    <button class="button button--primary" type="submit">Verificar y continuar</button>
+  </form>
+  <form class="account-resend" method="post">
+    <input type="hidden" name="action" value="resend" /><input type="hidden" name="email" value={email} data-resend-email /><input type="hidden" name="next" value={next} />
+    <span>¿No llegó el código?</span><button class="text-link" type="submit">Enviar uno nuevo</button>
+  </form>
+</AccountLayout>

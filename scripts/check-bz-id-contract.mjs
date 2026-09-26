@@ -11,8 +11,10 @@ const required = {
     'ACCOUNT_RESTRICTED',
     'enable row level security',
   ],
-  'Src/pages/cuenta/perfil.astro': ['get_my_bz_id_data', 'moderation_appeals', 'Exportar mis datos', 'Vincular un juego · próximamente'],
-  'Src/pages/admin/index.astro': ['moderate-player', 'delete-player', 'MODERATION_ACTION_LABELS'],
+  'supabase/migrations/202609230001_profile_ux.sql': ['username_change_count', 'change_username', 'USERNAME_COOLDOWN'],
+  'Src/pages/cuenta/perfil.astro': ['get_my_bz_id_data', 'moderation_appeals', 'Exportar mis datos', 'profile-disclosure', 'change_username'],
+  'Src/pages/cuenta/verificar.astro': ['verifyOtp', "type: 'email'", 'resend'],
+  'Src/pages/admin/index.astro': ['moderate-player', 'delete-player', 'MODERATION_ACTION_LABELS', 'admin-role-badge'],
   'docs/bz-id-architecture.md': ['Idempotency-Key', 'servidor-a-servidor', 'Despliegue y reversión'],
 };
 
