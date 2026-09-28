@@ -65,15 +65,15 @@ function renderMedia(game: AdminGame) {
     const orderInput = item.querySelector<HTMLInputElement>('input');
     orderButton.addEventListener('click', async () => {
       const { error } = await supabase.from('game_images').update({ sort_order: Number(orderInput?.value ?? 0) }).eq('id', image.id);
-      if (error) return setMessage(error.message, 'error');
+      if (error) return setMessage('No se pudo actualizar el orden de la imagen.', 'error');
       setMessage('Orden actualizado.');
     });
     deleteButton.addEventListener('click', async () => {
       if (!confirm('¿Quitar esta imagen?')) return;
       const { error: storageError } = await supabase.storage.from('game-media').remove([image.storage_path]);
-      if (storageError) return setMessage(storageError.message, 'error');
+      if (storageError) return setMessage('No se pudo eliminar el archivo de imagen.', 'error');
       const { error } = await supabase.from('game_images').delete().eq('id', image.id);
-      if (error) return setMessage(error.message, 'error');
+      if (error) return setMessage('No se pudo quitar la imagen del juego.', 'error');
       location.reload();
     });
     mediaList.append(item);
@@ -119,9 +119,9 @@ async function uploadImages(gameId: string, files: File[], kind: 'cover' | 'scre
     const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
     const path = `${gameId}/${crypto.randomUUID()}-${safeName}`;
     const { error: uploadError } = await supabase.storage.from('game-media').upload(path, file, { contentType: file.type, upsert: false });
-    if (uploadError) throw uploadError;
+    if (uploadError) throw new Error('No se pudo subir una de las imágenes. Revisá su tamaño y formato.');
     const { error: rowError } = await supabase.from('game_images').insert({ game_id: gameId, storage_path: path, kind, alt_text: alt, sort_order: kind === 'cover' ? 0 : order++ });
-    if (rowError) throw rowError;
+    if (rowError) throw new Error('La imagen se subió, pero no se pudo asociar al juego.');
   }
 }
 
@@ -146,7 +146,7 @@ form?.addEventListener('submit', async (event) => {
     };
     const query = id ? supabase.from('games').update(payload).eq('id', id) : supabase.from('games').insert(payload);
     const { data: saved, error } = await query.select('id').single();
-    if (error) throw error;
+    if (error) throw new Error('No se pudo guardar el juego. Revisá que el nombre y la dirección sean únicos.');
     const cover = data.get('cover');
     const screenshots = data.getAll('screenshots').filter((file): file is File => file instanceof File && file.size > 0);
     await uploadImages(saved.id, cover instanceof File && cover.size ? [cover] : [], 'cover', `Portada de ${payload.name}`);
@@ -162,7 +162,7 @@ document.querySelectorAll<HTMLElement>('[data-edit-game]').forEach((button) => b
 document.querySelectorAll<HTMLButtonElement>('[data-toggle-game]').forEach((button) => button.addEventListener('click', async () => {
   button.disabled = true;
   const { error } = await supabase.from('games').update({ is_visible: button.dataset.visible !== 'true' }).eq('id', button.dataset.toggleGame);
-  if (error) { setMessage(error.message, 'error'); button.disabled = false; } else location.reload();
+  if (error) { setMessage('No se pudo cambiar la visibilidad del juego.', 'error'); button.disabled = false; } else location.reload();
 }));
 document.querySelectorAll<HTMLButtonElement>('[data-delete-game]').forEach((button) => button.addEventListener('click', async () => {
   if (!confirm(`¿Eliminar definitivamente “${button.dataset.gameName}” y sus imágenes?`)) return;
@@ -171,7 +171,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-delete-game]').forEach((butt
   const paths = game?.game_images.map((image) => image.storage_path) ?? [];
   if (paths.length) await supabase.storage.from('game-media').remove(paths);
   const { error } = await supabase.from('games').delete().eq('id', button.dataset.deleteGame);
-  if (error) { setMessage(error.message, 'error'); button.disabled = false; } else location.reload();
+  if (error) { setMessage('No se pudo eliminar el juego.', 'error'); button.disabled = false; } else location.reload();
 }));
 
 document.querySelector('[data-new-game]')?.addEventListener('click', () => { resetEditor(); openEditor(); });
@@ -225,7 +225,7 @@ document.querySelectorAll<HTMLFormElement>('[data-member-form]').forEach((member
       sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
       is_visible: data.get('is_visible') === 'on',
     }, { onConflict: 'id' });
-    if (error) throw error;
+    if (error) throw new Error('No se pudo guardar el perfil del integrante.');
     setMessage(`Perfil de ${name} actualizado.`);
   } catch (error) {
     setMessage(error instanceof Error ? error.message : 'No se pudo guardar el perfil.', 'error');
@@ -238,7 +238,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-read-message]').forEach((but
   button.disabled = true;
   const { error } = await supabase.from('contact_messages').update({ is_read: true }).eq('id', button.dataset.readMessage);
   if (error) {
-    setMessage(error.message, 'error');
+    setMessage('No se pudo marcar el mensaje como leído.', 'error');
     button.disabled = false;
     return;
   }
@@ -259,7 +259,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-delete-message]').forEach((b
   button.disabled = true;
   const { error } = await supabase.from('contact_messages').delete().eq('id', button.dataset.deleteMessage);
   if (error) {
-    setMessage(error.message, 'error');
+    setMessage('No se pudo eliminar el mensaje.', 'error');
     button.disabled = false;
     return;
   }

@@ -1,10 +1,42 @@
 ---
+export const prerender = false;
+
 import AccountLayout from '../../layouts/AccountLayout.astro';
-import { accountRedirectUrl, getAccount, sameOrigin } from '../../lib/account';
-const { supabase } = await getAccount(Astro.request, Astro.cookies); let sent = false, error = '';
+import { getAccount, sameOrigin } from '../../lib/account';
+import { describeAuthFailure } from '../../lib/auth-errors';
+
+const { supabase } = await getAccount(Astro.request, Astro.cookies);
+let error = '';
+let email = '';
+
 if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  email = String(form.get('email') ?? '').trim().toLowerCase();
   if (!sameOrigin(Astro.request)) error = 'Solicitud no válida.';
-  else { const form = await Astro.request.formData(); const email = String(form.get('email') ?? '').trim(); const result = await supabase?.auth.resetPasswordForEmail(email, { redirectTo: accountRedirectUrl('/cuenta/callback/?next=%2Fcuenta%2Frestablecer%2F') }); error = result?.error ? 'No pudimos enviar el enlace. Intentá nuevamente.' : ''; sent = !error; }
+  else if (!supabase) error = 'El servicio de cuentas no está disponible en este momento.';
+  else {
+    const result = await supabase.auth.resetPasswordForEmail(email);
+    if (result.error) error = describeAuthFailure(result.error, 'No pudimos enviar el código. Intentá nuevamente más tarde.');
+    else {
+      Astro.cookies.set('pending_recovery_email', email, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: import.meta.env.PROD,
+        path: '/cuenta/',
+        maxAge: 60 * 60,
+      });
+      return Astro.redirect('/cuenta/restablecer/', 303);
+    }
+  }
 }
 ---
-<AccountLayout title="Recuperar contraseña"><form class="account-form" method="post">{error && <p class="form-status is-error" role="alert">{error}</p>}{sent ? <div class="account-notice"><strong>Revisá tu correo</strong><p>Si existe una cuenta con esa dirección, recibirás un enlace temporal para restablecer la contraseña.</p></div> : <><p>Ingresá tu correo y te enviaremos un enlace seguro. No informaremos si existe una cuenta asociada.</p><label>Correo electrónico<input name="email" type="email" autocomplete="email" required /></label><button class="button button--primary" type="submit">Enviar enlace</button></>}</form></AccountLayout>
+
+<AccountLayout title="Recuperar contraseña" description="Solicitá un código temporal para crear una contraseña nueva.">
+  <form class="account-form" method="post">
+    {error && <p class="form-status is-error" role="alert">{error}</p>}
+    <p>Ingresá tu correo y te enviaremos un código temporal de 6 dígitos. No informaremos si existe una cuenta asociada.</p>
+    <label>Correo electrónico<input name="email" value={email} type="email" autocomplete="email" required /></label>
+    <button class="button button--primary" type="submit">Enviar código</button>
+    <a class="text-link" href="/cuenta/login/">Volver a iniciar sesión</a>
+  </form>
+</AccountLayout>

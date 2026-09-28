@@ -124,7 +124,7 @@ if (!adminAuth) {
   ]);
   const accountError = profilesResult.error ?? ratingsResult.error ?? authUsersResult.error;
   identityReady = !playersResult.error;
-  if (accountError) accountsError = `No se pudo cargar la sección de usuarios: ${accountError.message}`;
+  if (accountError) accountsError = 'No se pudo cargar la sección de usuarios. Intentá actualizar el panel.';
   else {
     const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.user_id, profile]));
     const ratings = (ratingsResult.data ?? []) as Array<{ user_id: string; game_id: string; score: number; updated_at: string; games: { name: string; slug: string } | Array<{ name: string; slug: string }> | null }>;
@@ -199,9 +199,9 @@ const serializedGames = games.map((game) => ({
         <article><span>Usuarios</span><strong>{accountUsers.length}</strong><small>{accountUsers.reduce((total, account) => total + account.ratings.length, 0)} calificaciones</small></article>
       </section>
 
-      {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo: {gamesResult.error.message}</p>}
+      {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo. Intentá actualizar el panel.</p>}
       {membersResult.error && <p class="admin-message" data-kind="error">Los perfiles se muestran con sus datos iniciales. Aplicá la migración de integrantes en Supabase para poder guardarlos.</p>}
-      {messagesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar la bandeja de mensajes: {messagesResult.error.message}</p>}
+      {messagesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar la bandeja de mensajes. Intentá actualizar el panel.</p>}
       {accountsError && <p class="admin-message" data-kind="error">{accountsError}</p>}
       {dashboardNotice && <p class="admin-message" data-kind="success">{dashboardNotice}</p>}
       {dashboardError && <p class="admin-message" data-kind="error">{dashboardError}</p>}

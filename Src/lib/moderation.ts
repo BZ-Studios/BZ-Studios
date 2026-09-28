@@ -49,12 +49,12 @@ export async function applyModerationAction(client: ServiceClient, input: Modera
     opened_by: input.actorUserId,
     resolved_at: input.actionType === 'restored' ? now.toISOString() : null,
   }).select('id').single();
-  if (caseError || !moderationCase) throw new Error(`No se pudo abrir el caso: ${caseError?.message ?? 'error desconocido'}`);
+  if (caseError || !moderationCase) throw new Error('No se pudo abrir el caso de moderación.');
 
   if (input.actionType === 'restored') {
     const { error } = await client.from('moderation_actions').update({ revoked_at: now.toISOString(), revoked_by: input.actorUserId })
       .eq('player_id', player.id).is('revoked_at', null);
-    if (error) throw new Error(`No se pudieron cerrar las medidas anteriores: ${error.message}`);
+    if (error) throw new Error('No se pudieron cerrar las medidas anteriores.');
   }
 
   const { error: actionError } = await client.from('moderation_actions').insert({
@@ -70,18 +70,18 @@ export async function applyModerationAction(client: ServiceClient, input: Modera
     ends_at: endsAt,
     created_by: input.actorUserId,
   });
-  if (actionError) throw new Error(`No se pudo registrar la medida: ${actionError.message}`);
+  if (actionError) throw new Error('No se pudo registrar la medida.');
 
   const nextStatus = statusForAction(input.actionType);
   if (nextStatus) {
     const { error } = await client.from('players').update({ status: nextStatus }).eq('id', player.id);
-    if (error) throw new Error(`La medida quedó registrada, pero no se actualizó el estado: ${error.message}`);
+    if (error) throw new Error('La medida quedó registrada, pero no se pudo actualizar el estado de la cuenta.');
   }
 
   if (input.actionType === 'temporary_suspension' || input.actionType === 'indefinite_ban' || input.actionType === 'global_ban' || input.actionType === 'restored') {
     const banDuration = input.actionType === 'temporary_suspension' ? `${durationDays * 24}h` : input.actionType === 'restored' ? 'none' : '876000h';
     const { error } = await client.auth.admin.updateUserById(player.auth_user_id, { ban_duration: banDuration });
-    if (error) throw new Error(`La medida se guardó, pero Supabase Auth no pudo aplicarla: ${error.message}`);
+    if (error) throw new Error('La medida se guardó, pero no se pudo aplicar a la cuenta de autenticación.');
   }
 
   await client.from('security_audit_events').insert({
@@ -105,7 +105,7 @@ export async function deletePlayerAccount(client: ServiceClient, input: { actorU
   await client.from('account_deletion_requests').insert({ player_id: player.id, requested_by: input.actorUserId, request_type: 'administrative', status: 'processing', verified_at: new Date().toISOString() });
   await client.from('security_audit_events').insert({ player_id: player.id, actor_user_id: input.actorUserId, event_type: 'administrative_account_deletion', target_type: 'player', target_id: player.id });
   const result = await client.auth.admin.deleteUser(player.auth_user_id);
-  if (result.error) throw new Error(`Supabase Auth rechazó la eliminación: ${result.error.message}`);
+  if (result.error) throw new Error('El servicio de autenticación rechazó la eliminación de la cuenta.');
 }
 
 export async function reviewModerationAppeal(client: ServiceClient, input: { actorUserId: string; actorRole: AdminRole; appealId: string; status: string; decision: string }) {
@@ -117,7 +117,7 @@ export async function reviewModerationAppeal(client: ServiceClient, input: { act
   if (!['submitted', 'under_review'].includes(appeal.status)) throw new Error('Esta apelación ya fue resuelta.');
   const reviewedAt = new Date().toISOString();
   const { error } = await client.from('moderation_appeals').update({ status: input.status, decision: input.decision.trim(), reviewed_by: input.actorUserId, reviewed_at: reviewedAt }).eq('id', appeal.id);
-  if (error) throw new Error(`No se pudo resolver la apelación: ${error.message}`);
+  if (error) throw new Error('No se pudo guardar la resolución de la apelación.');
   await client.from('moderation_cases').update({ status: 'resolved', resolved_at: reviewedAt }).eq('id', appeal.case_id);
   await client.from('security_audit_events').insert({ player_id: appeal.player_id, actor_user_id: input.actorUserId, event_type: 'moderation_appeal_reviewed', target_type: 'moderation_appeal', target_id: appeal.id, metadata: { decision: input.status } });
 }

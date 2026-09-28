@@ -5,7 +5,7 @@ const png = readFileSync(new URL('../public/favicon.png', import.meta.url));
 const width = png.readUInt32BE(16);
 const height = png.readUInt32BE(20);
 if (width !== height || width > 256 || width < 1) {
-  throw new Error('The favicon must be square and no larger than 256 pixels.');
+  throw new Error('El favicon debe ser cuadrado y no superar los 256 píxeles.');
 }
 
 const header = Buffer.alloc(22);

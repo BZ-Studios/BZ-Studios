@@ -3,8 +3,7 @@ import type { AstroCookies } from 'astro';
 import { createSupabaseServerClient } from './supabase';
 import { siteConfig } from '../config/site';
 
-export const usernamePattern = /^[A-Za-z0-9_]{3,24}$/;
-export const validPassword = (value: string) => value.length >= 8 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value);
+export { usernamePattern, validPassword } from './credentials';
 export const accountRedirectUrl = (path: string) => new URL(path, import.meta.env.PUBLIC_SITE_URL || siteConfig.url).href;
 export const safeNext = (value: string | null, fallback = '/cuenta/perfil/') => {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || /%5c/i.test(value)) return fallback;

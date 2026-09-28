@@ -5,7 +5,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   const { supabase, user } = await getAccount(request, cookies);
-  if (!supabase || !user) return new Response(JSON.stringify({ error: 'AUTH_REQUIRED' }), { status: 401, headers: { 'content-type': 'application/json' } });
+  if (!supabase || !user) return new Response(JSON.stringify({ error: 'AUTENTICACION_REQUERIDA' }), { status: 401, headers: { 'content-type': 'application/json' } });
   const [profile, ratings, identity] = await Promise.all([
     supabase.from('profiles').select('username, created_at, updated_at').eq('user_id', user.id).maybeSingle(),
     supabase.from('game_ratings').select('game_id, score, created_at, updated_at, games(name, slug)').order('updated_at', { ascending: false }),

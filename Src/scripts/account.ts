@@ -1,10 +1,5 @@
 import { getSupabaseBrowserClient } from '../lib/supabase-browser';
-
-const passwordIsValid = (value: string) => value.length >= 8
-  && /[a-z]/.test(value)
-  && /[A-Z]/.test(value)
-  && /\d/.test(value)
-  && /[^A-Za-z0-9]/.test(value);
+import { usernamePattern, validPassword } from '../lib/credentials';
 
 function updateFieldState(input: HTMLInputElement, feedback: HTMLElement | null, message = '') {
   input.classList.toggle('is-invalid', Boolean(message));
@@ -28,6 +23,24 @@ document.querySelectorAll<HTMLButtonElement>('[data-password-toggle]').forEach((
   });
 });
 
+const manualPasswordInputs = document.querySelectorAll<HTMLInputElement>('[data-manual-password]');
+const clearManualPasswords = () => manualPasswordInputs.forEach((input) => {
+  input.value = '';
+  input.type = 'password';
+  input.readOnly = true;
+});
+manualPasswordInputs.forEach((input) => {
+  const unlock = () => {
+    input.readOnly = false;
+    input.value = '';
+  };
+  input.addEventListener('pointerdown', unlock);
+  input.addEventListener('focus', unlock);
+  input.addEventListener('keydown', unlock);
+});
+window.addEventListener('pageshow', clearManualPasswords);
+clearManualPasswords();
+
 const verificationEmail = document.querySelector<HTMLInputElement>('[data-verification-email]');
 const resendEmail = document.querySelector<HTMLInputElement>('[data-resend-email]');
 verificationEmail?.addEventListener('input', () => {
@@ -43,7 +56,7 @@ let usernameRequest = 0;
 async function checkUsername() {
   if (!username) return;
   const value = username.value.trim();
-  if (!/^[A-Za-z0-9_]{3,24}$/.test(value)) {
+  if (!usernamePattern.test(value)) {
     const message = /\s/.test(value)
       ? 'El nombre de usuario no puede contener espacios.'
       : 'Usá entre 3 y 24 letras, números o guiones bajos.';
@@ -95,7 +108,7 @@ document.querySelectorAll<HTMLFormElement>('[data-password-form]').forEach((form
 
   const validatePassword = () => {
     if (!password) return true;
-    const valid = passwordIsValid(password.value);
+    const valid = validPassword(password.value);
     updateFieldState(password, passwordFeedback, valid || !password.value ? '' : 'Usá 8 caracteres como mínimo, mayúscula, minúscula, número y símbolo.');
     return valid;
   };

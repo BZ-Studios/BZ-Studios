@@ -429,9 +429,6 @@ p { color: var(--muted); }
 .hp-field { position: absolute !important; left: -9999px !important; }
 .account-notice,.form-status { padding: 1rem; border: 1px solid #52d68a; border-radius: 7px; background: rgba(82,214,138,.08); color: #eafff2; }
 .form-status.is-error { border-color: var(--warm); background: rgba(255,93,118,.08); }
-.form-status p { margin: 0; }
-.form-diagnostic { display: block; margin-top: .55rem; color: #d9d3df; font-weight: 500; }
-.form-diagnostic code { color: #fff; font-weight: 800; }
 .verification-intro { margin-top: 0; }
 .verification-code { min-height: 4rem !important; font-size: 1.6rem; font-weight: 900; letter-spacing: .45em; text-align: center; }
 .account-resend { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1rem; margin-top: 1rem; }

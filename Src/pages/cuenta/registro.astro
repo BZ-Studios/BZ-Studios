@@ -3,7 +3,7 @@ import AccountLayout from '../../layouts/AccountLayout.astro';
 import LegalDocument from '../../components/LegalDocument.astro';
 import PasswordEye from '../../components/PasswordEye.astro';
 import { accountRedirectUrl, getAccount, safeNext, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
-import { describeSignupFailure, reportRegistrationFailure } from '../../lib/auth-diagnostics';
+import { describeSignupFailure } from '../../lib/auth-errors';
 import { privacyDocument, termsDocument } from '../../config/legal';
 
 const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
@@ -11,7 +11,6 @@ const next = safeNext(Astro.url.searchParams.get('next'));
 if (user) return Astro.redirect(next);
 
 let error = '';
-let diagnosticId = '';
 let username = '';
 let email = '';
 
@@ -31,7 +30,6 @@ if (Astro.request.method === 'POST') {
   else {
     const available = await supabase.rpc('username_available', { candidate: username });
     if (available.error) {
-      diagnosticId = reportRegistrationFailure('username-check', available.error);
       error = 'No pudimos comprobar el nombre de usuario. Intentá nuevamente más tarde.';
     }
     else if (!available.data) error = 'Ese nombre de usuario no está disponible.';
@@ -45,7 +43,6 @@ if (Astro.request.method === 'POST') {
         },
       });
       if (result.error) {
-        diagnosticId = reportRegistrationFailure('signup', result.error);
         error = describeSignupFailure(result.error);
       }
       else {
@@ -60,7 +57,7 @@ if (Astro.request.method === 'POST') {
 <AccountLayout title="Crear cuenta">
   <form class="account-form" method="post" data-registration-form data-password-form novalidate>
     <input class="hp-field" name="website" tabindex="-1" autocomplete="off" />
-    {error && <div class="form-status is-error" role="alert"><p>{error}</p>{diagnosticId && <small class="form-diagnostic">Código de diagnóstico: <code>{diagnosticId}</code></small>}</div>}
+    {error && <p class="form-status is-error" role="alert">{error}</p>}
     <>
       <div class="account-field">
         <label for="username">Nombre de usuario</label>
