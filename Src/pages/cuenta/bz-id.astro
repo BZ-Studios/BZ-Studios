@@ -1,0 +1,113 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import LegalDocument from '../../components/LegalDocument.astro';
+import { accountRedirectUrl, getAccount, safeNext, sameOrigin } from '../../lib/account';
+import { privacyDocument, termsDocument } from '../../config/legal';
+
+const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
+let next = safeNext(Astro.url.searchParams.get('next'));
+if (user) return Astro.redirect(next);
+
+let email = Astro.cookies.get('pending_bz_id_email')?.value ?? '';
+let step: 'email' | 'code' = email ? 'code' : 'email';
+let error = '';
+let notice = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? 'request');
+  next = safeNext(String(form.get('next') ?? next));
+  email = String(form.get('email') ?? '').trim().toLowerCase();
+
+  if (!sameOrigin(Astro.request)) error = 'Solicitud no válida.';
+  else if (!supabase || !email) error = 'Ingresá un correo válido.';
+  else if (action === 'verify') {
+    step = 'code';
+    const token = String(form.get('token') ?? '').replace(/\s/g, '');
+    if (!/^\d{6}$/.test(token)) error = 'El código debe tener exactamente 6 números.';
+    else {
+      const result = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      if (result.error || !result.data.user) error = 'El código no es válido o ya venció. Solicitá uno nuevo.';
+      else {
+        Astro.cookies.delete('pending_bz_id_email', { path: '/cuenta/' });
+        return Astro.redirect(next, 303);
+      }
+    }
+  } else {
+    const accepted = form.get('terms') === 'on' || action === 'resend';
+    if (!accepted) error = 'Debés aceptar los términos y la política de privacidad para continuar.';
+    else {
+      const result = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: accountRedirectUrl(next),
+          data: { terms_accepted_at: new Date().toISOString(), signup_source: 'bz_id_otp' },
+        },
+      });
+      if (result.error) error = 'No pudimos enviar el código todavía. Esperá un minuto e intentá nuevamente.';
+      else {
+        Astro.cookies.set('pending_bz_id_email', email, {
+          path: '/cuenta/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 60 * 60,
+        });
+        step = 'code';
+        notice = action === 'resend'
+          ? 'Enviamos un código nuevo. Usá solamente el último que recibas.'
+          : 'Te enviamos un código de 6 dígitos. Revisá también el correo no deseado.';
+      }
+    }
+  }
+}
+---
+
+<AccountLayout title="Acceder con B&Z ID" description="Iniciá sesión o creá tu identidad B&Z con un código temporal, sin contraseña.">
+  <div class="verification-intro">
+    <p class="kicker">Un correo · todos los juegos</p>
+    <p>Ingresá con un código temporal de seis dígitos. La sesión se conserva de forma segura para sincronizar tu progreso entre dispositivos.</p>
+  </div>
+  {error && <p class="form-status is-error" role="alert">{error}</p>}
+  {notice && <p class="form-status" role="status">{notice}</p>}
+
+  {step === 'email' ? (
+    <form class="account-form" method="post">
+      <input type="hidden" name="action" value="request" />
+      <input type="hidden" name="next" value={next} />
+      <label>Correo electrónico<input name="email" type="email" autocomplete="email" required /></label>
+      <div class="account-terms"><label class="account-check"><input name="terms" type="checkbox" data-terms required /><span>Acepto los <button class="account-legal-trigger" type="button" data-modal-open="bz-id-terms-dialog">términos y condiciones</button> y la <button class="account-legal-trigger" type="button" data-modal-open="bz-id-privacy-dialog">política de privacidad</button>.</span></label></div>
+      <button class="button button--primary" type="submit">Enviar código</button>
+      <p class="account-help">Si el correo todavía no tiene una cuenta, se creará un B&Z ID automáticamente.</p>
+    </form>
+  ) : (
+    <>
+      <form class="account-form" method="post">
+        <input type="hidden" name="action" value="verify" />
+        <input type="hidden" name="next" value={next} />
+        <label>Correo electrónico<input name="email" type="email" value={email} autocomplete="email" readonly required /></label>
+        <label>Código de acceso<input class="verification-code" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="000000" required /></label>
+        <button class="button button--primary" type="submit">Entrar con B&Z ID</button>
+      </form>
+      <form class="account-resend" method="post">
+        <input type="hidden" name="action" value="resend" />
+        <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="next" value={next} />
+        <span>¿No llegó el código?</span><button class="text-link" type="submit">Enviar uno nuevo</button>
+      </form>
+      <p><a class="text-link" href={`/cuenta/bz-id/?next=${encodeURIComponent(next)}`}>Usar otro correo</a></p>
+    </>
+  )}
+
+  <p class="account-switch">¿Preferís tu contraseña? <a href={`/cuenta/login/?next=${encodeURIComponent(next)}`}>Usar acceso tradicional</a>.</p>
+
+  <dialog class="account-legal-dialog" id="bz-id-terms-dialog" data-modal-dialog aria-labelledby="bz-id-terms-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{termsDocument.eyebrow}</p><h2 id="bz-id-terms-title">{termsDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar términos">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={termsDocument} compact /></div>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
+  </dialog>
+  <dialog class="account-legal-dialog" id="bz-id-privacy-dialog" data-modal-dialog aria-labelledby="bz-id-privacy-title">
+    <div class="account-legal-dialog__heading"><div><p class="kicker">{privacyDocument.eyebrow}</p><h2 id="bz-id-privacy-title">{privacyDocument.title}</h2></div><button type="button" data-modal-close aria-label="Cerrar política de privacidad">×</button></div>
+    <div class="account-legal-dialog__body"><LegalDocument document={privacyDocument} compact /></div>
+    <button class="button button--primary" type="button" data-modal-close>Entendido</button>
+  </dialog>
+</AccountLayout>

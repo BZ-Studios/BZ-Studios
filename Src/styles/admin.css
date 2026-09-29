@@ -136,6 +136,19 @@
 .admin-identity-grid p { margin: 0 0 .55rem; color: #aaa7b3; font-size: .75rem; overflow-wrap: anywhere; }
 .admin-identity-grid p:last-child { margin-bottom: 0; }
 .admin-identity-grid small { display: block; color: #85818d; }
+.admin-ufo-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(290px,1fr)); gap: 1rem; }
+.admin-ufo-player { padding: 1rem; }
+.admin-ufo-player header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.admin-ufo-player header h3 { margin: .15rem 0 0; }
+.admin-ufo-player dl { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55rem; margin: 0; }
+.admin-ufo-player dl div { padding: .65rem; border: 1px solid rgba(255,255,255,.07); border-radius: 7px; background: rgba(0,0,0,.18); }
+.admin-ufo-player dt { color: #87838f; font-size: .62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.admin-ufo-player dd { margin: .2rem 0 0; color: #f6f3fa; font-weight: 800; overflow-wrap: anywhere; }
+.admin-ufo-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .6rem; margin-top: .7rem; }
+.admin-ufo-details section { padding: .7rem; border-top: 1px solid var(--line); }
+.admin-ufo-details h4 { margin: 0 0 .45rem; font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; }
+.admin-ufo-details p { display: flex; justify-content: space-between; gap: .75rem; margin: .25rem 0; color: #aaa7b3; font-size: .72rem; }
+.admin-ufo-details span { text-align: right; }
 .admin-appeals article + article { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--line); }
 .admin-appeals form { display: grid; gap: .45rem; margin-top: .55rem; }
 .admin-appeals select,.admin-appeals textarea { width: 100%; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 6px; color: #fff; background: #09080e; font: inherit; }
@@ -197,6 +210,7 @@
   .admin-section-heading { grid-template-columns: 1fr; gap: .5rem; }
   .admin-team-grid { gap: .9rem; }
   .admin-identity-grid { grid-template-columns: 1fr; }
+  .admin-ufo-details { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .admin-topbar { position: static; }

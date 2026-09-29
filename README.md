@@ -2,6 +2,7 @@
 
 Sitio oficial construido con Astro, TypeScript, CSS y Supabase. Incluye catálogo dinámico y panel privado de administración.
 También incluye cuentas verificadas, perfil, recuperación de contraseña y calificaciones de 1 a 5 estrellas protegidas con RLS.
+La primera versión de B&Z ID añade acceso por OTP y una integración segura, multi-juego y no destructiva para UFO RUN.
 
 ## Desarrollo local
 
@@ -22,6 +23,7 @@ Validación de producción: `npm run build`.
 - `Src/pages/admin/`: acceso privado, catálogo, perfiles del equipo y bandeja de mensajes.
 - `Src/pages/cuenta/`: registro, acceso, recuperación, perfil y eliminación de cuenta.
 - `supabase/`: migración SQL e instrucciones de configuración.
+- `docs/ufo-run-integration.md`: contrato de autenticación, API, sincronización y migración desde Upstash.
 - `Src/types/game.ts`: modelo de datos y estados válidos.
 - `Src/config/site.ts`: navegación, integrantes y redes sociales.
 - `Src/config/content.ts`: textos generales.

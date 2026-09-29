@@ -10,6 +10,8 @@ Para activar la identidad central, moderación, apelaciones y auditoría, ejecut
 
 Después ejecutá `migrations/202609230001_profile_ux.sql`. Esta migración habilita el primer cambio gratuito de nombre de usuario, aplica una espera de tres meses a partir del segundo cambio e impide saltarse la regla mediante una actualización directa.
 
+Para preparar UFO RUN, ejecutá finalmente `migrations/202609290001_ufo_run_identity.sql`. Solo agrega tablas, índices, RLS y funciones: no elimina Upstash ni modifica sus puntuaciones. Crea perfiles de juego al primer uso, ranking verificado por dificultad, skins, logros, recompensas diarias, importación local limitada e historial legado separado.
+
 En **Authentication > URL Configuration** agregá `https://bzstudios.com.ar/**` a las URLs de redirección. Conservá activada la confirmación de correo. Supabase aplica límites de frecuencia y el formulario agrega un campo trampa contra bots; si más adelante se habilita CAPTCHA en Supabase, primero deberá integrarse su widget y enviar el token desde ambos formularios.
 
 En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para consultar usuarios y calificaciones en el dashboard y permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.
@@ -77,6 +79,16 @@ La recuperación lleva al usuario de `/cuenta/recuperar/` a `/cuenta/restablecer
 
 4. Guardá la plantilla. El código es de un solo uso y vence según el tiempo configurado para los OTP de correo.
 
+### Acceso B&Z ID sin contraseña
+
+La ruta `/cuenta/bz-id/` usa la plantilla **Magic Link** de Supabase aunque la interfaz solicite un código. Para que llegue un OTP de seis dígitos:
+
+1. Abrí **Authentication → Email Templates → Magic Link**.
+2. Cambiá el asunto a `Tu código de acceso | B&Z Studios`.
+3. Usá `{{ .Token }}` en el cuerpo y no `{{ .ConfirmationURL }}`.
+4. Indicá que el código debe ingresarse en `https://bzstudios.com.ar/cuenta/bz-id/`.
+5. Guardá la plantilla y confirmá que **Email OTP Length** siga configurado en `6`.
+
 ## 4. Variables de entorno
 
 El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
@@ -85,6 +97,8 @@ El archivo `.env` local ya usa las credenciales públicas. En Vercel agregá:
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `PUBLIC_SITE_URL`
 - `SUPABASE_SECRET_KEY` como variable privada del servidor, necesaria para la sección de usuarios del dashboard y para eliminar cuentas desde el perfil
+- `UFO_RUN_SERVER_API_KEY` como secreto privado compartido únicamente entre las funciones serverless de ambos proyectos
+- `UFO_RUN_ALLOWED_ORIGINS` con `https://ufo-run-web.vercel.app` y, si corresponde, los orígenes locales separados por comas
 
 Para recibir también cada mensaje por correo mediante Resend agregá:
 
@@ -112,5 +126,17 @@ La publishable key puede usarse en el navegador porque RLS protege los datos. La
 6. Enviá una apelación desde el perfil. Solo puede existir una apelación abierta por caso.
 7. Probá la exportación JSON y confirmá que no contiene contraseñas, claves privadas ni información de otros usuarios.
 8. Ejecutá `tests/bz_identity_smoke.sql` en SQL Editor para comprobar que no quedaron perfiles o calificaciones huérfanos y que existe al menos un propietario.
+
+## 7. Verificación de UFO RUN
+
+1. Ejecutá `npm run test:ufo-run` y `npm run build`.
+2. Aplicá `migrations/202609290001_ufo_run_identity.sql` en SQL Editor.
+3. Ejecutá `tests/ufo_run_smoke.sql`; sus consultas son de lectura y no alteran datos.
+4. Configurá en Vercel `UFO_RUN_SERVER_API_KEY` y `UFO_RUN_ALLOWED_ORIGINS` y volvé a desplegar.
+5. Configurá la plantilla **Magic Link** con `{{ .Token }}`.
+6. Abrí `/cuenta/bz-id/`, solicitá un código y comprobá que la sesión llegue a `/cuenta/perfil/`.
+7. Consultá `/api/bz-id/v1/ufo-run/ranking?difficulty=normal`; debe responder JSON sin exponer correos ni identificadores internos.
+8. Entrá al dashboard y revisá la sección **UFO RUN**.
+9. Usá `docs/ufo-run-integration.md` al adaptar el repositorio del juego. Conservá Upstash activo durante la transición.
 
 La vinculación real con videojuegos aún no se habilita desde el sitio. Antes de activarla, cada juego necesita un servidor confiable y debe cumplir el contrato y las reglas de seguridad descritos en `docs/bz-id-architecture.md`. Nunca coloques `SUPABASE_SECRET_KEY` dentro de un juego, aplicación móvil o código que llegue al navegador.

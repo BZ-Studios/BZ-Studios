@@ -108,6 +108,22 @@ let accountUsers: Array<{
   appeals: Array<{ id: string; status: string; message: string; decision: string | null; createdAt: string }>;
   ratings: Array<{ gameId: string; score: number; updatedAt: string; game: { name: string; slug: string } | null }>;
 }> = [];
+type UfoRunAdminPlayer = {
+  playerId: string;
+  publicId: string;
+  displayName: string;
+  coins: number;
+  equippedSkin: string;
+  preferredDifficulty: string;
+  soundEnabled: boolean;
+  lastActiveAt: string | null;
+  skins: string[];
+  scores: Array<{ difficulty: string; score: number; source: string }>;
+  achievements: Array<{ code: string; progress: number; unlockedAt: string | null }>;
+  adsRewardedToday: number;
+};
+let ufoRunPlayers: UfoRunAdminPlayer[] = [];
+let ufoRunReady = true;
 
 if (!adminAuth) {
   accountsError = 'Falta configurar SUPABASE_SECRET_KEY para consultar los usuarios desde el servidor.';
@@ -160,6 +176,41 @@ if (!adminAuth) {
     }).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   }
 }
+
+if (adminAuth) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [ufoProfilesResult, ufoSkinsResult, ufoScoresResult, ufoAchievementsResult, ufoAdsResult] = await Promise.all([
+    adminAuth.from('ufo_run_profiles').select('player_id, coins, equipped_skin, preferred_difficulty, sound_enabled, last_active_at'),
+    adminAuth.from('ufo_run_player_skins').select('player_id, skin_id'),
+    adminAuth.from('ufo_run_scores').select('player_id, difficulty, best_score, score_source'),
+    adminAuth.from('ufo_run_player_achievements').select('player_id, achievement_code, progress, unlocked_at'),
+    adminAuth.from('ufo_run_daily_ad_rewards').select('player_id, ads_rewarded').eq('reward_date', today),
+  ]);
+  ufoRunReady = !ufoProfilesResult.error;
+  if (ufoRunReady) {
+    const ufoSkins = ufoSkinsResult.data ?? [];
+    const ufoScores = ufoScoresResult.data ?? [];
+    const ufoAchievements = ufoAchievementsResult.data ?? [];
+    const ufoAds = ufoAdsResult.data ?? [];
+    ufoRunPlayers = (ufoProfilesResult.data ?? []).map((profile) => {
+      const account = accountUsers.find((candidate) => candidate.playerId === profile.player_id);
+      return {
+        playerId: profile.player_id,
+        publicId: account?.publicId ?? 'B&Z ID',
+        displayName: account?.username ?? 'Jugador',
+        coins: profile.coins,
+        equippedSkin: profile.equipped_skin,
+        preferredDifficulty: profile.preferred_difficulty,
+        soundEnabled: profile.sound_enabled,
+        lastActiveAt: profile.last_active_at,
+        skins: ufoSkins.filter((skin) => skin.player_id === profile.player_id).map((skin) => skin.skin_id),
+        scores: ufoScores.filter((score) => score.player_id === profile.player_id).map((score) => ({ difficulty: score.difficulty, score: score.best_score, source: score.score_source })),
+        achievements: ufoAchievements.filter((achievement) => achievement.player_id === profile.player_id).map((achievement) => ({ code: achievement.achievement_code, progress: achievement.progress, unlockedAt: achievement.unlocked_at })),
+        adsRewardedToday: ufoAds.find((reward) => reward.player_id === profile.player_id)?.ads_rewarded ?? 0,
+      };
+    }).sort((a, b) => Date.parse(b.lastActiveAt ?? '1970-01-01') - Date.parse(a.lastActiveAt ?? '1970-01-01'));
+  }
+}
 const publicMediaUrl = (path: string) => supabase.storage.from('game-media').getPublicUrl(path).data.publicUrl;
 const serializedGames = games.map((game) => ({
   ...game,
@@ -175,7 +226,7 @@ const serializedGames = games.map((game) => ({
     <div class="admin-shell admin-topbar__inner">
       <a class="admin-brand" href="/admin/"><img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" /><span>Administración</span></a>
       <nav class="admin-nav" aria-label="Secciones del panel">
-        <a href="#juegos">Juegos</a><a href="#equipo">Equipo</a><a href="#usuarios">Usuarios</a><a href="#mensajes">Mensajes</a>
+        <a href="#juegos">Juegos</a><a href="#equipo">Equipo</a><a href="#usuarios">Usuarios</a><a href="#ufo-run">UFO RUN</a><a href="#mensajes">Mensajes</a>
       </nav>
       <div class="admin-user">
         <span>{session.user.email}<small>{ADMIN_ROLE_LABELS[adminRole]}</small></span>
@@ -197,6 +248,7 @@ const serializedGames = games.map((game) => ({
         <article><span>Equipo</span><strong>{members.length}</strong><small>perfiles configurables</small></article>
         <article><span>Mensajes nuevos</span><strong data-unread-count>{unreadMessages}</strong><small data-message-total>{contactMessages.length} en la bandeja</small></article>
         <article><span>Usuarios</span><strong>{accountUsers.length}</strong><small>{accountUsers.reduce((total, account) => total + account.ratings.length, 0)} calificaciones</small></article>
+        <article><span>UFO RUN</span><strong>{ufoRunPlayers.length}</strong><small>jugadores sincronizados</small></article>
       </section>
 
       {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo. Intentá actualizar el panel.</p>}
@@ -353,6 +405,31 @@ const serializedGames = games.map((game) => ({
                 </div>}
               </div>
             </details>
+          ))}
+        </div>}
+      </section>
+
+      <section class="admin-workspace" id="ufo-run">
+        <div class="admin-section-heading"><div><p class="kicker">Juego conectado</p><h2>UFO RUN</h2></div><p>Consultá progreso sincronizado, récords, logros, skins y recompensas diarias. Las operaciones sensibles solo se aceptan desde el servidor oficial del juego.</p></div>
+        {!ufoRunReady && <div class="admin-empty admin-panel"><strong>Integración pendiente</strong><p>Aplicá la migración <code>202609290001_ufo_run_identity.sql</code> en Supabase para activar esta sección.</p></div>}
+        {ufoRunReady && ufoRunPlayers.length === 0 && <div class="admin-empty admin-panel"><strong>Sin jugadores sincronizados</strong><p>Los perfiles aparecerán después del primer acceso de cada jugador desde UFO RUN.</p></div>}
+        {ufoRunReady && ufoRunPlayers.length > 0 && <div class="admin-ufo-grid">
+          {ufoRunPlayers.map((player) => (
+            <article class="admin-panel admin-ufo-player">
+              <header><div><p class="kicker">{player.publicId}</p><h3>{player.displayName}</h3></div><span class="admin-account-state is-verified">{player.preferredDifficulty}</span></header>
+              <dl>
+                <div><dt>Monedas</dt><dd>{player.coins.toLocaleString('es-AR')}</dd></div>
+                <div><dt>Skin equipada</dt><dd>{player.equippedSkin}</dd></div>
+                <div><dt>Skins adquiridas</dt><dd>{player.skins.length}</dd></div>
+                <div><dt>Anuncios hoy</dt><dd>{player.adsRewardedToday}/10</dd></div>
+                <div><dt>Sonido</dt><dd>{player.soundEnabled ? 'Activado' : 'Desactivado'}</dd></div>
+                <div><dt>Última actividad</dt><dd>{player.lastActiveAt ? accountDateFormatter.format(new Date(player.lastActiveAt)) : 'Sin actividad'}</dd></div>
+              </dl>
+              <div class="admin-ufo-details">
+                <section><h4>Mejores puntuaciones</h4>{player.scores.length ? player.scores.map((score) => <p><strong>{score.difficulty}</strong><span>{score.score.toLocaleString('es-AR')} · {score.source === 'verified' ? 'verificada' : 'importada'}</span></p>) : <p>Sin puntuaciones.</p>}</section>
+                <section><h4>Logros</h4><p><strong>{player.achievements.filter((achievement) => achievement.unlockedAt).length}</strong><span>desbloqueados de {player.achievements.length} con progreso</span></p></section>
+              </div>
+            </article>
           ))}
         </div>}
       </section>

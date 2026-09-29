@@ -6,6 +6,14 @@ B&Z ID es la identidad central de los jugadores de B&Z Studios. Esta entrega inc
 
 La vinculación real con un videojuego queda deliberadamente desactivada hasta que ese juego tenga un servidor confiable. No se deben crear vinculaciones desde un cliente público ni incluir `SUPABASE_SECRET_KEY`, una clave de servicio o un secreto compartido dentro de un ejecutable del juego.
 
+La integración inicial de UFO RUN sí puede activarse porque separa operaciones públicas y operaciones confiables: el navegador autentica al jugador con OTP y el servidor oficial del juego firma las escrituras sensibles. El contrato detallado está en `docs/ufo-run-integration.md`.
+
+## Acceso OTP del MVP
+
+La ruta `/cuenta/bz-id/` solicita un código de seis dígitos mediante Supabase Auth, verifica el OTP y conserva la sesión usando cookies SSR. La misma sesión identifica a `auth.users`, `profiles` y `players`; no se crea un segundo sistema de usuarios. Los juegos externos usan la publishable key para autenticación y envían el access token a la API central. La secret key y la clave servidor-a-servidor nunca llegan al cliente.
+
+El paso futuro hacia un SSO completo debe utilizar OAuth 2.1/OIDC con Authorization Code y PKCE, clientes separados, redirect URIs exactas, JWKS, scopes, consentimiento y revocación. Compartir cookies entre dominios o tokens en una URL no es una alternativa segura.
+
 ## Separación de responsabilidades
 
 - `auth.users`: autenticación, correo, contraseña, sesiones y bloqueo de acceso.
