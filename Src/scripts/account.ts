@@ -31,6 +31,7 @@ const clearManualPasswords = () => manualPasswordInputs.forEach((input) => {
 });
 manualPasswordInputs.forEach((input) => {
   const unlock = () => {
+    if (!input.readOnly) return;
     input.readOnly = false;
     input.value = '';
   };
