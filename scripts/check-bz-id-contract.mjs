@@ -12,7 +12,7 @@ const required = {
     'enable row level security',
   ],
   'supabase/migrations/202609230001_profile_ux.sql': ['username_change_count', 'change_username', 'USERNAME_COOLDOWN'],
-  'Src/pages/cuenta/perfil.astro': ['get_my_bz_id_data', 'moderation_appeals', 'Exportar mis datos', 'profile-disclosure', 'change_username'],
+  'Src/pages/cuenta/perfil.astro': ['get_my_bz_id_data', 'moderation_appeals', 'Exportar mis datos', 'profile-disclosure', 'change_username', 'username-change-meter', 'data-username-countdown'],
   'Src/scripts/account.ts': ['if (!input.readOnly) return;'],
   'Src/pages/cuenta/verificar.astro': ['verifyOtp', "type: 'email'", 'resend'],
   'Src/pages/admin/index.astro': ['moderate-player', 'delete-player', 'MODERATION_ACTION_LABELS', 'admin-role-badge'],

@@ -442,6 +442,26 @@ p { color: var(--muted); }
 .profile-stack section + section { padding-top: 2rem; border-top: 1px solid var(--line); }
 .profile-stack h2 { margin-bottom: 1rem; font-family: var(--font-body); font-size: 1.25rem; letter-spacing: 0; text-transform: none; }
 .identity-hero,.profile-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.username-change-panel { display: grid; gap: 1rem; margin-top: 1.25rem; padding: clamp(1rem,3vw,1.35rem); border: 1px solid rgba(243,41,168,.26); border-radius: 10px; background: radial-gradient(circle at 100% 0,rgba(255,193,61,.08),transparent 38%),linear-gradient(145deg,rgba(124,25,230,.08),rgba(0,0,0,.2)); }
+.username-change-panel.is-locked { border-color: rgba(255,255,255,.12); background: radial-gradient(circle at 100% 0,rgba(124,25,230,.1),transparent 40%),rgba(0,0,0,.2); }
+.username-change-panel__heading,.username-change-timing { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.username-change-panel__heading > div { display: grid; gap: .15rem; }
+.username-change-panel__eyebrow { color: var(--yellow); font-size: .68rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.username-change-panel__heading strong { color: #fff; font-size: 1.05rem; }
+.username-change-status { flex: 0 0 auto; padding: .4rem .65rem; border: 1px solid rgba(255,193,61,.35); border-radius: 999px; color: var(--yellow); background: rgba(255,193,61,.07); font-size: .7rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.username-change-status.is-ready { border-color: rgba(82,214,138,.38); color: #78e9a7; background: rgba(82,214,138,.08); }
+.username-change-meter { height: .42rem; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.08); box-shadow: inset 0 1px 2px rgba(0,0,0,.45); }
+.username-change-meter span { display: block; width: var(--username-cooldown-progress); height: 100%; border-radius: inherit; background: var(--brand-gradient); box-shadow: 0 0 1rem rgba(243,41,168,.32); transition: width .4s ease; }
+.username-change-timing { color: var(--muted); font-size: .74rem; }
+.username-change-timing time,.username-change-timing span:last-child { color: #d8d4df; text-align: right; }
+.username-change-form { gap: .85rem; }
+.username-change-action { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 4rem; padding: .8rem 1rem; border: 1px solid rgba(243,41,168,.32); border-radius: 7px; color: #08050b; background: var(--brand-gradient); cursor: pointer; transition: transform .18s ease,filter .18s ease; }
+.username-change-action > span { font: 900 .9rem/1 var(--font-body); letter-spacing: .08em; }
+.username-change-action small { display: inline-flex; align-items: center; gap: .35rem; color: #08050b; font-size: .7rem; font-weight: 900; text-transform: uppercase; }
+.username-change-action:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
+.username-change-action:disabled { border-color: var(--line); color: #918b99; background: rgba(255,255,255,.035); cursor: not-allowed; }
+.username-change-action:disabled small { color: #77717e; }
+.username-change-dialog strong { color: var(--yellow); }
 .identity-hero h2 { margin: .35rem 0; font-family: var(--font-display); font-size: clamp(2rem,7vw,3.4rem); letter-spacing: -.02em; text-transform: uppercase; }
 .identity-hero p:last-child { max-width: 35rem; margin-bottom: 0; }
 .identity-status { display: inline-flex; align-items: center; width: max-content; padding: .35rem .65rem; border: 1px solid rgba(82,214,138,.38); border-radius: 999px; color: #78e9a7; background: rgba(82,214,138,.08); font-size: .67rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
@@ -554,6 +574,9 @@ p { color: var(--muted); }
   .legal-document > section { padding-block: 1.35rem; }
   .profile-ratings article { align-items: flex-start; flex-direction: column; }
   .identity-hero,.profile-section-heading,.linked-games article { align-items: flex-start; flex-direction: column; }
+  .username-change-panel__heading,.username-change-timing,.username-change-action { align-items: flex-start; flex-direction: column; }
+  .username-change-status { align-self: flex-start; }
+  .username-change-timing time,.username-change-timing span:last-child { text-align: left; }
   .identity-details { grid-template-columns: 1fr; }
   .profile-section-heading .button { width: 100%; }
   .rating-buttons button { width: min(3rem,17vw); height: min(3rem,17vw); }
