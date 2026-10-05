@@ -19,6 +19,7 @@ interface GameRow {
   description: string;
   play_url: string | null;
   trailer_url: string | null;
+  video_urls: string[] | null;
   status: GameStatus;
   platforms: string[] | null;
   genres: string[] | null;
@@ -54,6 +55,7 @@ function mapGame(row: GameRow): Game {
     cover: cover ? publicImageUrl(cover.storage_path) : undefined,
     screenshots,
     trailerUrl: row.trailer_url ?? undefined,
+    videoUrls: row.video_urls ?? [],
     platforms: row.platforms ?? [],
     genres: normalizeGameGenres(row.genres),
     status: row.status,
@@ -77,22 +79,39 @@ async function addRatings(games: Game[], client: NonNullable<ReturnType<typeof c
 }
 
 const gameSelect = `
-  id, slug, name, short_description, description, play_url, trailer_url,
+  id, slug, name, short_description, description, play_url, trailer_url, video_urls,
   status, platforms, genres, published_at, featured, is_visible,
   seo_title, seo_description, features, controls,
   game_images ( id, storage_path, kind, alt_text, sort_order )
 `;
 
+const legacyGameSelect = gameSelect.replace(', video_urls', '');
+
 export async function getPublicGames(): Promise<Game[]> {
   const client = createPublicClient();
   if (!client) return fallbackGames;
 
-  const { data, error } = await client
+  const primaryResult = await client
     .from('games')
     .select(gameSelect)
     .eq('is_visible', true)
     .order('featured', { ascending: false })
     .order('published_at', { ascending: false, nullsFirst: false });
+  let data: unknown = primaryResult.data;
+  let error = primaryResult.error;
+
+  // Mantiene el catálogo disponible durante el breve intervalo entre el deploy
+  // y la ejecución manual de la migración que agrega video_urls.
+  if (error) {
+    const legacyResult = await client
+      .from('games')
+      .select(legacyGameSelect)
+      .eq('is_visible', true)
+      .order('featured', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false });
+    data = legacyResult.data;
+    error = legacyResult.error;
+  }
 
   if (error || !data) return fallbackGames;
   return addRatings((data as unknown as GameRow[]).map(mapGame), client);

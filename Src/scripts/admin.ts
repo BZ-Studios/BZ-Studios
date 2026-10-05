@@ -89,6 +89,7 @@ function editGame(game: AdminGame) {
   set('id', game.id); set('name', game.name); set('slug', game.slug);
   set('short_description', game.short_description); set('description', game.description);
   set('play_url', game.play_url); set('trailer_url', game.trailer_url); set('status', game.status);
+  set('video_urls', (game.video_urls as string[] | null)?.join('\n'));
   set('published_at', game.published_at); set('platforms', (game.platforms as string[] | null)?.join(', '));
   const selectedGenres = new Set(normalizeGameGenres(game.genres as string[] | null));
   form.querySelectorAll<HTMLInputElement>('input[name="genres"]').forEach((input) => { input.checked = selectedGenres.has(input.value); });
@@ -138,7 +139,7 @@ form?.addEventListener('submit', async (event) => {
     const payload = {
       name: String(data.get('name') ?? '').trim(), slug: slugify(String(data.get('slug') ?? '')),
       short_description: String(data.get('short_description') ?? '').trim(), description: String(data.get('description') ?? '').trim(),
-      play_url: nullable(data.get('play_url')), trailer_url: nullable(data.get('trailer_url')), status: String(data.get('status')),
+      play_url: nullable(data.get('play_url')), trailer_url: nullable(data.get('trailer_url')), video_urls: values(data.get('video_urls')), status: String(data.get('status')),
       platforms: values(data.get('platforms')), genres, published_at: nullable(data.get('published_at')),
       featured: data.get('featured') === 'on', is_visible: data.get('is_visible') === 'on',
       seo_title: nullable(data.get('seo_title')), seo_description: nullable(data.get('seo_description')),

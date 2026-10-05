@@ -12,6 +12,8 @@ Después ejecutá `migrations/202609230001_profile_ux.sql`. Esta migración habi
 
 Para preparar UFO RUN, ejecutá finalmente `migrations/202609290001_ufo_run_identity.sql`. Solo agrega tablas, índices, RLS y funciones: no elimina Upstash ni modifica sus puntuaciones. Crea perfiles de juego al primer uso, ranking verificado por dificultad, skins, logros, recompensas diarias, importación local limitada e historial legado separado.
 
+Para habilitar varios videos de YouTube por juego, ejecutá `migrations/202610050001_game_videos.sql`. Conserva el tráiler actual y agrega el Short de Monkey Climb Remastered como video adicional en su galería.
+
 En **Authentication > URL Configuration** agregá `https://bzstudios.com.ar/**` a las URLs de redirección. Conservá activada la confirmación de correo. Supabase aplica límites de frecuencia y el formulario agrega un campo trampa contra bots; si más adelante se habilita CAPTCHA en Supabase, primero deberá integrarse su widget y enviar el token desde ambos formularios.
 
 En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para consultar usuarios y calificaciones en el dashboard y permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.

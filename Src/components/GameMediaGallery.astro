@@ -6,13 +6,19 @@ interface Props {
   screenshots?: string[];
   cover?: string;
   trailerUrl?: string;
+  videoUrls?: string[];
 }
 
-const { gameName, screenshots = [], cover, trailerUrl } = Astro.props;
-const youtubeId = getYouTubeVideoId(trailerUrl);
+const { gameName, screenshots = [], cover, trailerUrl, videoUrls = [] } = Astro.props;
+const trailerYoutubeId = getYouTubeVideoId(trailerUrl);
+const additionalYoutubeIds = videoUrls
+  .map(getYouTubeVideoId)
+  .filter((id): id is string => Boolean(id) && id !== trailerYoutubeId)
+  .filter((id, index, ids) => ids.indexOf(id) === index);
 const images = screenshots.length ? screenshots : cover ? [cover] : [];
 const media = [
-  ...(youtubeId ? [{ type: 'video' as const, src: getYouTubeThumbnailUrl(youtubeId), youtubeId }] : []),
+  ...(trailerYoutubeId ? [{ type: 'video' as const, src: getYouTubeThumbnailUrl(trailerYoutubeId), youtubeId: trailerYoutubeId, label: 'Tráiler' }] : []),
+  ...additionalYoutubeIds.map((youtubeId, index) => ({ type: 'video' as const, src: getYouTubeThumbnailUrl(youtubeId), youtubeId, label: `Video ${index + 1}` })),
   ...images.map((src, index) => ({ type: 'image' as const, src, index })),
 ];
 ---
@@ -22,19 +28,19 @@ const media = [
     <div class="shell">
       <div class="game-media-heading">
         <div><p class="kicker">Galería multimedia</p><h2 id="game-media-title">Mirá el juego en acción</h2></div>
-        <p>Recorré el tráiler y las capturas sin salir de la página.</p>
+        <p>Recorré el tráiler, los videos y las capturas sin salir de la página.</p>
       </div>
 
-      <div class="game-media-carousel" data-game-media-carousel data-video-index={youtubeId ? '0' : undefined} tabindex="0" aria-label={`Galería multimedia de ${gameName}`}>
+      <div class="game-media-carousel" data-game-media-carousel data-video-index={trailerYoutubeId ? '0' : undefined} tabindex="0" aria-label={`Galería multimedia de ${gameName}`}>
         <div class="game-media-stage">
           {media.map((item, mediaIndex) => (
             <figure class:list={['game-media-slide', { 'is-active': mediaIndex === 0 }]} data-media-slide data-media-type={item.type} data-media-index={mediaIndex} hidden={mediaIndex !== 0}>
               {item.type === 'video' ? (
                 <div class="game-media-video">
-                  <button type="button" class="game-media-video__poster" data-video-play data-youtube-id={item.youtubeId} data-embed-url={getYouTubeEmbedUrl(item.youtubeId)} aria-label={`Reproducir tráiler de ${gameName}`}>
+                  <button type="button" class="game-media-video__poster" data-video-play data-youtube-id={item.youtubeId} data-embed-url={getYouTubeEmbedUrl(item.youtubeId)} aria-label={`Reproducir ${item.label.toLowerCase()} de ${gameName}`}>
                     <img src={item.src} alt="" loading="lazy" width="960" height="540" />
                     <span class="game-media-play" aria-hidden="true"><i></i></span>
-                    <strong>Reproducir tráiler</strong>
+                    <strong>Reproducir {item.label.toLowerCase()}</strong>
                   </button>
                   <div class="game-media-video__player" data-video-player hidden></div>
                 </div>
@@ -55,7 +61,7 @@ const media = [
           {media.map((item, mediaIndex) => (
             <button type="button" role="tab" class:list={['game-media-thumbnail', { 'is-active': mediaIndex === 0 }]} aria-selected={mediaIndex === 0 ? 'true' : 'false'} data-media-thumbnail data-media-index={mediaIndex}>
               <img src={item.src} alt="" loading="lazy" width="240" height="135" />
-              <span>{item.type === 'video' ? 'Tráiler' : `Captura ${item.index + 1}`}</span>
+              <span>{item.type === 'video' ? item.label : `Captura ${item.index + 1}`}</span>
               {item.type === 'video' && <i aria-hidden="true">▶</i>}
             </button>
           ))}

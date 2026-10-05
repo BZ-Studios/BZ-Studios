@@ -16,6 +16,7 @@ export interface Game {
   cover?: string;
   screenshots?: string[];
   trailerUrl?: string;
+  videoUrls?: string[];
   platforms?: string[];
   genres: string[];
   status: GameStatus;

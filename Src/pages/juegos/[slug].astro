@@ -86,7 +86,7 @@ const gameSchema = {
     {game.features && game.features.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Características</p><h2>Lo que te espera</h2><ul class="feature-list">{game.features.map((feature) => <li>{feature}</li>)}</ul></div></section>
     )}
-    <GameMediaGallery gameName={game.name} screenshots={game.screenshots} cover={game.cover} trailerUrl={game.trailerUrl} />
+    <GameMediaGallery gameName={game.name} screenshots={game.screenshots} cover={game.cover} trailerUrl={game.trailerUrl} videoUrls={game.videoUrls} />
     {game.controls && game.controls.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Controles</p><h2>Listo para jugar</h2><dl class="control-list">{game.controls.map((control) => <><dt>{control.input}</dt><dd>{control.action}</dd></>)}</dl></div></section>
     )}
