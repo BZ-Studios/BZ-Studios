@@ -1,0 +1,146 @@
+---
+import { getYouTubeEmbedUrl, getYouTubeThumbnailUrl, getYouTubeVideoId } from '../lib/youtube.mjs';
+
+interface Props {
+  gameName: string;
+  screenshots?: string[];
+  cover?: string;
+  trailerUrl?: string;
+}
+
+const { gameName, screenshots = [], cover, trailerUrl } = Astro.props;
+const youtubeId = getYouTubeVideoId(trailerUrl);
+const images = screenshots.length ? screenshots : cover ? [cover] : [];
+const media = [
+  ...(youtubeId ? [{ type: 'video' as const, src: getYouTubeThumbnailUrl(youtubeId), youtubeId }] : []),
+  ...images.map((src, index) => ({ type: 'image' as const, src, index })),
+];
+---
+
+{media.length > 0 && (
+  <section class="section game-media-section" id="game-media" aria-labelledby="game-media-title">
+    <div class="shell">
+      <div class="game-media-heading">
+        <div><p class="kicker">Galería multimedia</p><h2 id="game-media-title">Mirá el juego en acción</h2></div>
+        <p>Recorré el tráiler y las capturas sin salir de la página.</p>
+      </div>
+
+      <div class="game-media-carousel" data-game-media-carousel data-video-index={youtubeId ? '0' : undefined} tabindex="0" aria-label={`Galería multimedia de ${gameName}`}>
+        <div class="game-media-stage">
+          {media.map((item, mediaIndex) => (
+            <figure class:list={['game-media-slide', { 'is-active': mediaIndex === 0 }]} data-media-slide data-media-type={item.type} data-media-index={mediaIndex} hidden={mediaIndex !== 0}>
+              {item.type === 'video' ? (
+                <div class="game-media-video">
+                  <button type="button" class="game-media-video__poster" data-video-play data-youtube-id={item.youtubeId} data-embed-url={getYouTubeEmbedUrl(item.youtubeId)} aria-label={`Reproducir tráiler de ${gameName}`}>
+                    <img src={item.src} alt="" loading="lazy" width="960" height="540" />
+                    <span class="game-media-play" aria-hidden="true"><i></i></span>
+                    <strong>Reproducir tráiler</strong>
+                  </button>
+                  <div class="game-media-video__player" data-video-player hidden></div>
+                </div>
+              ) : (
+                <img src={item.src} alt={`Captura ${item.index + 1} de ${gameName}`} loading={mediaIndex === 0 ? 'eager' : 'lazy'} width="1280" height="720" />
+              )}
+            </figure>
+          ))}
+
+          {media.length > 1 && <>
+            <button class="game-media-nav is-previous" type="button" data-media-previous aria-label="Elemento anterior"><span aria-hidden="true">←</span></button>
+            <button class="game-media-nav is-next" type="button" data-media-next aria-label="Elemento siguiente"><span aria-hidden="true">→</span></button>
+          </>}
+          <span class="game-media-counter" data-media-counter aria-live="polite">1 / {media.length}</span>
+        </div>
+
+        {media.length > 1 && <div class="game-media-thumbnails" role="tablist" aria-label="Seleccionar elemento de la galería">
+          {media.map((item, mediaIndex) => (
+            <button type="button" role="tab" class:list={['game-media-thumbnail', { 'is-active': mediaIndex === 0 }]} aria-selected={mediaIndex === 0 ? 'true' : 'false'} data-media-thumbnail data-media-index={mediaIndex}>
+              <img src={item.src} alt="" loading="lazy" width="240" height="135" />
+              <span>{item.type === 'video' ? 'Tráiler' : `Captura ${item.index + 1}`}</span>
+              {item.type === 'video' && <i aria-hidden="true">▶</i>}
+            </button>
+          ))}
+        </div>}
+      </div>
+    </div>
+  </section>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-game-media-carousel]').forEach((carousel) => {
+    const slides = Array.from(carousel.querySelectorAll<HTMLElement>('[data-media-slide]'));
+    const thumbnails = Array.from(carousel.querySelectorAll<HTMLButtonElement>('[data-media-thumbnail]'));
+    const counter = carousel.querySelector<HTMLElement>('[data-media-counter]');
+    const previous = carousel.querySelector<HTMLButtonElement>('[data-media-previous]');
+    const next = carousel.querySelector<HTMLButtonElement>('[data-media-next]');
+    let activeIndex = 0;
+    let pointerStart = 0;
+
+    const stopVideo = (slide: HTMLElement) => {
+      const poster = slide.querySelector<HTMLButtonElement>('[data-video-play]');
+      const player = slide.querySelector<HTMLElement>('[data-video-player]');
+      if (!player) return;
+      player.replaceChildren();
+      player.hidden = true;
+      if (poster) poster.hidden = false;
+    };
+
+    const playVideo = (slide: HTMLElement) => {
+      const poster = slide.querySelector<HTMLButtonElement>('[data-video-play]');
+      const player = slide.querySelector<HTMLElement>('[data-video-player]');
+      const embedUrl = poster?.dataset.embedUrl;
+      if (!poster || !player || !embedUrl) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = `${embedUrl}&autoplay=1`;
+      iframe.title = poster.getAttribute('aria-label') ?? 'Tráiler del juego';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      player.replaceChildren(iframe);
+      poster.hidden = true;
+      player.hidden = false;
+    };
+
+    const select = (requestedIndex: number, play = false) => {
+      if (!slides.length) return;
+      const index = (requestedIndex + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        const active = slideIndex === index;
+        slide.hidden = !active;
+        slide.classList.toggle('is-active', active);
+        if (!active) stopVideo(slide);
+      });
+      thumbnails.forEach((thumbnail, thumbnailIndex) => {
+        const active = thumbnailIndex === index;
+        thumbnail.classList.toggle('is-active', active);
+        thumbnail.setAttribute('aria-selected', String(active));
+        if (active) thumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      });
+      activeIndex = index;
+      if (counter) counter.textContent = `${index + 1} / ${slides.length}`;
+      if (play && slides[index]?.dataset.mediaType === 'video') playVideo(slides[index]);
+    };
+
+    previous?.addEventListener('click', () => select(activeIndex - 1));
+    next?.addEventListener('click', () => select(activeIndex + 1));
+    thumbnails.forEach((thumbnail) => thumbnail.addEventListener('click', () => select(Number(thumbnail.dataset.mediaIndex ?? 0))));
+    slides.forEach((slide) => slide.querySelector<HTMLButtonElement>('[data-video-play]')?.addEventListener('click', () => playVideo(slide)));
+    carousel.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); select(activeIndex - 1); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); select(activeIndex + 1); }
+    });
+    carousel.addEventListener('pointerdown', (event) => { pointerStart = event.clientX; });
+    carousel.addEventListener('pointerup', (event) => {
+      const distance = event.clientX - pointerStart;
+      if (Math.abs(distance) < 55) return;
+      select(activeIndex + (distance < 0 ? 1 : -1));
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-open-game-trailer]').forEach((trigger) => trigger.addEventListener('click', (event) => {
+      const videoIndex = Number(carousel.dataset.videoIndex ?? -1);
+      if (videoIndex < 0) return;
+      event.preventDefault();
+      select(videoIndex, true);
+      document.getElementById('game-media')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }));
+  });
+</script>
