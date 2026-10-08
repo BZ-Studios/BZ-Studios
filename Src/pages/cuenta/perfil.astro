@@ -150,42 +150,40 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
     <section>
       <div class="profile-section-heading"><div><p class="kicker">Identidad</p><h2>Datos de la cuenta</h2></div><a class="button button--ghost button--small" href="/cuenta/exportar.json">Exportar mis datos</a></div>
       <dl class="identity-details">
+        <div class="identity-username"><dt>Nombre de usuario</dt><dd><strong>{profile?.username ?? 'Sin nombre'}</strong><button type="button" data-modal-open="username-change-dialog" aria-label="Editar nombre de usuario" title="Editar nombre de usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm12.5-16.5 4 4 1.2-1.2a1.4 1.4 0 0 0 0-2l-2-2a1.4 1.4 0 0 0-2 0L16.5 3.5Z" /></svg></button></dd></div>
         <div><dt>Correo</dt><dd>{user.email} <small>{user.email_confirmed_at ? 'Verificado' : 'Pendiente de verificar'}</small></dd></div>
         <div><dt>Estado</dt><dd>{identityReady ? PLAYER_STATUS_LABELS[bzId!.identity.status] : 'Cuenta web activa'}</dd></div>
         {bzId?.identity.createdAt && <div><dt>Creación</dt><dd>{dateFormatter.format(new Date(bzId.identity.createdAt))}</dd></div>}
       </dl>
-      <div class:list={['username-change-panel', { 'is-locked': usernameLocked }]} style={`--username-cooldown-progress:${usernameCooldownProgress}%`}>
-        <div class="username-change-panel__heading">
-          <div><span class="username-change-panel__eyebrow">Cambio de nombre</span><strong>{usernameLocked ? 'Tiempo de espera activo' : 'Cambio disponible'}</strong></div>
-          <span class:list={['username-change-status', { 'is-ready': !usernameLocked }]}>{usernameRemainingLabel}</span>
+      <dialog class="site-dialog username-change-dialog" id="username-change-dialog" data-modal-dialog aria-labelledby="username-change-title">
+        <div class="username-change-dialog__heading"><div><p class="kicker">Identidad pública</p><h2 id="username-change-title">Editar nombre</h2></div><button type="button" data-modal-close aria-label="Cerrar">×</button></div>
+        <div class:list={['username-change-panel', { 'is-locked': usernameLocked }]} style={`--username-cooldown-progress:${usernameCooldownProgress}%`}>
+          <div class="username-change-panel__heading">
+            <div><span class="username-change-panel__eyebrow">Cambio de nombre</span><strong>{usernameLocked ? 'Tiempo de espera activo' : 'Cambio disponible'}</strong></div>
+            <span class:list={['username-change-status', { 'is-ready': !usernameLocked }]}>{usernameRemainingLabel}</span>
+          </div>
+          <div class="username-change-meter" aria-label={usernameLocked ? `Progreso de la espera: ${Math.round(usernameCooldownProgress)}%` : 'Cambio de nombre disponible'}><span aria-hidden="true"></span></div>
+          <div class="username-change-timing">
+            <span>{usernameLocked ? 'Espera entre cambios' : profile?.username_change_count ? 'Tiempo de espera completado' : 'Primer cambio sin espera previa'}</span>
+            {usernameLocked && nextUsernameChange
+              ? <time datetime={nextUsernameChange.toISOString()} data-username-countdown data-available-at={nextUsernameChange.toISOString()}>{`Se habilita el ${dateFormatter.format(nextUsernameChange)}`}</time>
+              : <span>Después deberás esperar tres meses</span>}
+          </div>
+          <form class="account-form username-change-form" id="username-change-form" method="post" data-username-change-form data-current-username={profile?.username ?? ''}>
+            <input type="hidden" name="action" value="username" />
+            <label>Nuevo nombre de usuario
+              <input name="username" value={profile?.username ?? ''} minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" spellcheck="false" disabled={usernameLocked} data-profile-username required />
+              <small>Usá entre 3 y 24 letras, números o guiones bajos, sin espacios.</small>
+              <span class="field-feedback" data-profile-username-feedback aria-live="polite"></span>
+            </label>
+            {!usernameLocked && <p class="username-change-warning">Al confirmar, deberás esperar tres meses para volver a modificarlo.</p>}
+            <button class="username-change-action" type="submit" disabled data-username-change-action>
+              <span>{usernameLocked ? 'CAMBIO BLOQUEADO' : 'CONFIRMAR CAMBIO'}</span>
+              <small>{usernameLocked ? <><span aria-hidden="true">◷</span> Esperá {usernameRemainingLabel}</> : <><span aria-hidden="true">✓</span> Disponible ahora</>}</small>
+            </button>
+          </form>
         </div>
-        <div class="username-change-meter" aria-label={usernameLocked ? `Progreso de la espera: ${Math.round(usernameCooldownProgress)}%` : 'Cambio de nombre disponible'}><span aria-hidden="true"></span></div>
-        <div class="username-change-timing">
-          <span>{usernameLocked ? 'Espera entre cambios' : profile?.username_change_count ? 'Tiempo de espera completado' : 'Primer cambio sin espera previa'}</span>
-          {usernameLocked && nextUsernameChange
-            ? <time datetime={nextUsernameChange.toISOString()} data-username-countdown data-available-at={nextUsernameChange.toISOString()}>{`Se habilita el ${dateFormatter.format(nextUsernameChange)}`}</time>
-            : <span>Después deberás esperar tres meses</span>}
-        </div>
-        <form class="account-form username-change-form" id="username-change-form" method="post" data-username-change-form data-current-username={profile?.username ?? ''}>
-          <input type="hidden" name="action" value="username" />
-          <label>Nuevo nombre de usuario
-            <input name="username" value={profile?.username ?? ''} minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" spellcheck="false" disabled={usernameLocked} data-profile-username required />
-            <small>Usá entre 3 y 24 letras, números o guiones bajos, sin espacios.</small>
-            <span class="field-feedback" data-profile-username-feedback aria-live="polite"></span>
-          </label>
-          <button class="username-change-action" type="button" disabled data-modal-open="username-change-dialog" data-username-change-action>
-            <span>{usernameLocked ? 'CAMBIO BLOQUEADO' : 'CAMBIAR NOMBRE'}</span>
-            <small>{usernameLocked ? <><span aria-hidden="true">◷</span> Esperá {usernameRemainingLabel}</> : <><span aria-hidden="true">✓</span> Disponible ahora</>}</small>
-          </button>
-        </form>
-      </div>
-      {!usernameLocked && <dialog class="site-dialog username-change-dialog" id="username-change-dialog" data-modal-dialog aria-labelledby="username-change-title">
-        <p class="kicker">Confirmar identidad</p>
-        <h2 id="username-change-title">¿Cambiar tu nombre?</h2>
-        <p>Tu nuevo nombre público será <strong data-username-change-preview>{profile?.username ?? ''}</strong>.</p>
-        <p>Después de confirmarlo comenzará una espera de <strong>tres meses</strong>. Durante ese período no podrás volver a modificarlo.</p>
-        <div class="site-dialog__actions"><button class="button button--ghost" type="button" data-modal-close>Cancelar</button><button class="button" type="button" data-username-change-confirm>Confirmar cambio</button></div>
-      </dialog>}
+      </dialog>
     </section>
 
     <section class="profile-settings">
@@ -225,11 +223,7 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
   const usernameInput = usernameForm?.querySelector<HTMLInputElement>('[data-profile-username]');
   const usernameFeedback = usernameForm?.querySelector<HTMLElement>('[data-profile-username-feedback]');
   const usernameAction = usernameForm?.querySelector<HTMLButtonElement>('[data-username-change-action]');
-  const usernameDialog = document.getElementById('username-change-dialog') as HTMLDialogElement | null;
-  const usernamePreview = usernameDialog?.querySelector<HTMLElement>('[data-username-change-preview]');
-  const usernameConfirm = usernameDialog?.querySelector<HTMLButtonElement>('[data-username-change-confirm]');
   const originalUsername = usernameForm?.dataset.currentUsername ?? '';
-  let usernameChangeConfirmed = false;
 
   const syncUsernameChange = () => {
     if (!usernameInput || !usernameAction) return;
@@ -244,25 +238,12 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
     usernameInput.setAttribute('aria-invalid', String(Boolean(candidate && message)));
     if (usernameFeedback) usernameFeedback.textContent = candidate ? message : '';
     usernameAction.disabled = !formatValid || !changed;
-    if (usernamePreview) usernamePreview.textContent = candidate || originalUsername;
   };
 
   usernameInput?.addEventListener('input', syncUsernameChange);
   usernameForm?.addEventListener('submit', (event) => {
-    if (usernameChangeConfirmed) return;
-    event.preventDefault();
     syncUsernameChange();
-    if (!usernameForm.reportValidity()) return;
-    usernameDialog?.showModal();
-    document.documentElement.setAttribute('data-modal-open', '');
-  });
-  usernameConfirm?.addEventListener('click', () => {
-    if (!usernameForm || !usernameInput) return;
-    syncUsernameChange();
-    if (!usernameForm.reportValidity()) return;
-    usernameChangeConfirmed = true;
-    usernameDialog?.close();
-    usernameForm.requestSubmit();
+    if (!usernameForm.reportValidity()) event.preventDefault();
   });
   syncUsernameChange();
 

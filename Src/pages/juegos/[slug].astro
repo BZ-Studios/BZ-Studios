@@ -6,7 +6,6 @@ import GameMediaGallery from '../../components/GameMediaGallery.astro';
 import { siteConfig } from '../../config/site';
 import { getPublicGameBySlug, getPublicGames } from '../../lib/games';
 import { getAccount } from '../../lib/account';
-import { getYouTubeVideoId } from '../../lib/youtube.mjs';
 
 const game = await getPublicGameBySlug(Astro.params.slug ?? '');
 if (!game) return Astro.redirect('/404/', 302);
@@ -19,7 +18,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.url).h
 const primaryGenre = game.genres[0]?.toLocaleLowerCase('es-AR');
 const genrePhrase = primaryGenre ? ` de ${primaryGenre}` : '';
 const canPlayOnline = Boolean(game.playUrl && game.status !== 'Próximamente');
-const embeddedTrailer = getYouTubeVideoId(game.trailerUrl);
 const defaultSeoTitle = `${game.name}: videojuego${genrePhrase}${canPlayOnline ? ' online' : ''}`;
 const supportingSeoText = game.shortDescription.trim().length >= 50
   ? game.shortDescription.trim()
@@ -74,9 +72,7 @@ const gameSchema = {
             <p class="lead">{game.description}</p>
             <div class="button-row">
               {game.playUrl && game.status !== 'Próximamente' && <a class="button button--primary" href={game.playUrl} target="_blank" rel="noreferrer">Jugar ahora <span aria-hidden="true">↗</span></a>}
-              {game.trailerUrl && (embeddedTrailer
-                ? <a class="button button--ghost" href="#game-media" data-open-game-trailer>Reproducir tráiler <span aria-hidden="true">▶</span></a>
-                : <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>)}
+              {game.trailerUrl && <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>}
             </div>
           </div>
         </div>
@@ -86,7 +82,7 @@ const gameSchema = {
     {game.features && game.features.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Características</p><h2>Lo que te espera</h2><ul class="feature-list">{game.features.map((feature) => <li>{feature}</li>)}</ul></div></section>
     )}
-    <GameMediaGallery gameName={game.name} screenshots={game.screenshots} cover={game.cover} trailerUrl={game.trailerUrl} videoUrls={game.videoUrls} />
+    <GameMediaGallery gameName={game.name} screenshots={game.screenshots} cover={game.cover} videoUrls={game.videoUrls} />
     {game.controls && game.controls.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Controles</p><h2>Listo para jugar</h2><dl class="control-list">{game.controls.map((control) => <><dt>{control.input}</dt><dd>{control.action}</dd></>)}</dl></div></section>
     )}

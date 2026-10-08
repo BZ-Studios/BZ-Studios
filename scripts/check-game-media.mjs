@@ -13,7 +13,9 @@ const component = await readFile(new URL('../Src/components/GameMediaGallery.ast
 for (const marker of ['data-game-media-carousel', 'data-video-play', 'data-media-previous', 'data-media-next']) {
   assert.ok(component.includes(marker), `Falta ${marker} en la galería multimedia`);
 }
-assert.ok(component.includes('additionalYoutubeIds'), 'La galería debe admitir videos adicionales');
+assert.ok(component.includes('youtubeIds'), 'La galería debe admitir videos adicionales');
+assert.ok(!component.includes('data-open-game-trailer'), 'El tráiler no debe formar parte de la galería multimedia');
+assert.ok(!component.includes('Captura ${item.index + 1}</span>'), 'Las miniaturas no deben mostrar títulos');
 
 const gameLoader = await readFile(new URL('../Src/lib/games.ts', import.meta.url), 'utf8');
 assert.ok(gameLoader.includes('video_urls'), 'La carga de juegos debe incluir los videos adicionales');
