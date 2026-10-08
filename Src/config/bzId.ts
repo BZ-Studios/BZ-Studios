@@ -17,6 +17,13 @@ export const MODERATION_ACTION_LABELS = {
   restored: 'Restablecer cuenta',
 } as const;
 
+export const MODERATION_SCOPE_LABELS: Record<string, string> = {
+  central_identity: 'Toda tu cuenta B&Z',
+  ecosystem: 'Todos los juegos y servicios B&Z',
+  feature: 'Calificaciones del sitio',
+  game: 'Un juego específico',
+};
+
 export const ADMIN_ROLE_LABELS = {
   support: 'Soporte',
   moderator: 'Moderador',
@@ -53,6 +60,8 @@ export interface BzIdentityPayload {
     caseId: string | null;
     action: ModerationActionType;
     scope: string;
+    scopeId?: string | null;
+    scopeName?: string | null;
     message: string;
     startsAt: string;
     endsAt: string | null;

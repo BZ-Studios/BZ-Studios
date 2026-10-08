@@ -4,7 +4,7 @@ import { createPublicClient } from '../../lib/supabase';
 export const prerender = false;
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
-const allowedCategories = new Set(['Idea', 'Sugerencia', 'Problema', 'Feedback sobre un juego', 'Consulta', 'Otro']);
+const allowedCategories = new Set(['Idea', 'Sugerencia', 'Problema', 'Apelación', 'Feedback sobre un juego', 'Consulta', 'Otro']);
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] ?? character);
 
 async function notifyByEmail({ name, email, category, message }: { name: string; email: string; category: string; message: string }) {

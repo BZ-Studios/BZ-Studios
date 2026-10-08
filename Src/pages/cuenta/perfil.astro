@@ -5,21 +5,13 @@ import AccountLayout from '../../layouts/AccountLayout.astro';
 import PasswordEye from '../../components/PasswordEye.astro';
 import { createAdminAuthClient, getAccount, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
 import { describeAuthFailure } from '../../lib/auth-errors';
-import { MODERATION_ACTION_LABELS, PLAYER_STATUS_LABELS, type BzIdentityPayload } from '../../config/bzId';
+import { MODERATION_ACTION_LABELS, MODERATION_SCOPE_LABELS, PLAYER_STATUS_LABELS, type BzIdentityPayload } from '../../config/bzId';
 
 const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
 if (!user || !supabase) return Astro.redirect(`/cuenta/login/?next=${encodeURIComponent('/cuenta/perfil/')}`);
 
 const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' });
-const addCalendarMonths = (date: Date, months: number) => {
-  const result = new Date(date);
-  const originalDay = result.getUTCDate();
-  result.setUTCDate(1);
-  result.setUTCMonth(result.getUTCMonth() + months);
-  const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
-  result.setUTCDate(Math.min(originalDay, lastDay));
-  return result;
-};
+const USERNAME_COOLDOWN_MS = 90 * 86_400_000;
 const formatRemainingTime = (milliseconds: number) => {
   const totalHours = Math.max(1, Math.ceil(milliseconds / 3_600_000));
   const totalDays = Math.floor(totalHours / 24);
@@ -43,7 +35,7 @@ if (Astro.request.method === 'POST') {
     if (!usernamePattern.test(username)) error = 'Usá entre 3 y 24 letras, números o guiones bajos, sin espacios.';
     else {
       const result = await supabase.rpc('change_username', { candidate: username });
-      if (!result.error) notice = 'Nombre actualizado. El próximo cambio estará disponible dentro de tres meses.';
+      if (!result.error) notice = 'Nombre actualizado. El próximo cambio estará disponible dentro de 90 días.';
       else if (result.error.message.includes('USERNAME_COOLDOWN')) {
         const availableAt = result.error.message.match(/USERNAME_COOLDOWN:([^\s]+)/)?.[1];
         error = availableAt ? `Podrás volver a cambiar el nombre el ${dateFormatter.format(new Date(availableAt))}.` : 'El cambio de nombre está en período de espera.';
@@ -52,7 +44,7 @@ if (Astro.request.method === 'POST') {
       else if (result.error.code === 'PGRST202' || result.error.message.includes('change_username')) {
         const legacy = await supabase.from('profiles').update({ username }).eq('user_id', user.id);
         error = legacy.error ? 'Ese nombre no está disponible.' : '';
-        notice = error ? '' : 'Nombre actualizado. Aplicá la migración nueva para activar el límite de tres meses.';
+        notice = error ? '' : 'Nombre actualizado. Aplicá la migración nueva para activar el límite de 90 días.';
       } else error = 'No pudimos cambiar el nombre de usuario.';
     }
   } else if (action === 'appeal') {
@@ -62,8 +54,8 @@ if (Astro.request.method === 'POST') {
     if (!player) error = 'Primero debe aplicarse la migración de B&Z ID en Supabase.';
     else if (!caseId || message.length < 20 || message.length > 2000) error = 'La apelación debe explicar el caso en entre 20 y 2000 caracteres.';
     else {
-      const result = await supabase.from('moderation_appeals').insert({ case_id: caseId, player_id: player.id, message });
-      error = result.error ? (result.error.code === '23505' ? 'Ya existe una apelación abierta para este caso.' : 'No pudimos enviar la apelación.') : '';
+      const result = await supabase.rpc('submit_moderation_appeal', { p_case_id: caseId, p_message: message });
+      error = result.error ? (result.error.code === '23505' || result.error.message.includes('APPEAL_ALREADY_OPEN') ? 'Ya existe una apelación abierta para este caso.' : 'No pudimos enviar la apelación.') : '';
       notice = error ? '' : 'Apelación enviada. Podés consultar su estado en esta misma página.';
     }
   } else if (action === 'password' || action === 'delete-account') {
@@ -110,9 +102,11 @@ if (Astro.request.method === 'POST') {
 
 let profileResult = await supabase.from('profiles').select('username,username_change_count,username_changed_at').eq('user_id', user.id).single();
 if (profileResult.error) profileResult = await supabase.from('profiles').select('username').eq('user_id', user.id).single() as typeof profileResult;
-const [{ data: ratings }, identityResult] = await Promise.all([
+const [{ data: ratings }, identityResult, ufoProfileResult, ufoGameResult] = await Promise.all([
   supabase.from('game_ratings').select('game_id,score,updated_at,games(name,slug)').order('updated_at', { ascending: false }),
   supabase.rpc('get_my_bz_id_data'),
+  supabase.from('ufo_run_profiles').select('player_id,last_active_at').maybeSingle(),
+  supabase.from('games').select('name,play_url').eq('slug', 'ufo-run').eq('is_visible', true).maybeSingle(),
 ]);
 
 type RelatedGame = { name: string; slug: string };
@@ -125,7 +119,7 @@ const bzId = (!identityResult.error && identityResult.data ? identityResult.data
 const identityReady = Boolean(bzId?.identity);
 const activeAppealCases = new Set((bzId?.appeals ?? []).filter((appeal) => ['submitted', 'under_review'].includes(appeal.status)).map((appeal) => appeal.caseId));
 const usernameChangedAt = profile?.username_changed_at ? new Date(profile.username_changed_at) : null;
-const nextUsernameChange = profile?.username_change_count && usernameChangedAt ? addCalendarMonths(usernameChangedAt, 3) : null;
+const nextUsernameChange = profile?.username_change_count && usernameChangedAt ? new Date(usernameChangedAt.getTime() + USERNAME_COOLDOWN_MS) : null;
 const usernameLocked = Boolean(nextUsernameChange && nextUsernameChange > new Date());
 const usernameCooldownTotal = usernameChangedAt && nextUsernameChange ? nextUsernameChange.getTime() - usernameChangedAt.getTime() : 0;
 const usernameCooldownElapsed = usernameChangedAt ? Date.now() - usernameChangedAt.getTime() : 0;
@@ -135,6 +129,14 @@ const usernameCooldownProgress = usernameLocked && usernameCooldownTotal > 0
 const usernameRemainingLabel = usernameLocked && nextUsernameChange
   ? formatRemainingTime(nextUsernameChange.getTime() - Date.now())
   : 'Disponible ahora';
+const ufoProfile = ufoProfileResult.error ? null : ufoProfileResult.data;
+const ufoGame = ufoGameResult.error ? null : ufoGameResult.data;
+const moderationScopeLabel = (measure: BzIdentityPayload['moderation'][number]) => measure.scopeName || MODERATION_SCOPE_LABELS[measure.scope] || 'Cuenta B&Z';
+const moderationDurationLabel = (measure: BzIdentityPayload['moderation'][number]) => {
+  if (measure.action === 'warning') return 'Advertencia informativa';
+  if (measure.endsAt) return `Hasta el ${dateFormatter.format(new Date(measure.endsAt))}`;
+  return 'Sin fecha de finalización';
+};
 ---
 <AccountLayout title="Mi B&Z ID" description="Administrá tu identidad de jugador, seguridad, juegos vinculados, calificaciones y derechos de privacidad.">
   <div class="profile-stack">
@@ -167,7 +169,7 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
             <span>{usernameLocked ? 'Espera entre cambios' : profile?.username_change_count ? 'Tiempo de espera completado' : 'Primer cambio sin espera previa'}</span>
             {usernameLocked && nextUsernameChange
               ? <time datetime={nextUsernameChange.toISOString()} data-username-countdown data-available-at={nextUsernameChange.toISOString()}>{`Se habilita el ${dateFormatter.format(nextUsernameChange)}`}</time>
-              : <span>Después deberás esperar tres meses</span>}
+              : <span>Después deberás esperar 90 días</span>}
           </div>
           <form class="account-form username-change-form" id="username-change-form" method="post" data-username-change-form data-current-username={profile?.username ?? ''}>
             <input type="hidden" name="action" value="username" />
@@ -176,7 +178,7 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
               <small>Usá entre 3 y 24 letras, números o guiones bajos, sin espacios.</small>
               <span class="field-feedback" data-profile-username-feedback aria-live="polite"></span>
             </label>
-            {!usernameLocked && <p class="username-change-warning">Al confirmar, deberás esperar tres meses para volver a modificarlo.</p>}
+            {!usernameLocked && <p class="username-change-warning">Al confirmar, deberás esperar exactamente 90 días para volver a modificarlo.</p>}
             <button class="username-change-action" type="submit" disabled data-username-change-action>
               <span>{usernameLocked ? 'CAMBIO BLOQUEADO' : 'CONFIRMAR CAMBIO'}</span>
               <small>{usernameLocked ? <><span aria-hidden="true">◷</span> Esperá {usernameRemainingLabel}</> : <><span aria-hidden="true">✓</span> Disponible ahora</>}</small>
@@ -196,12 +198,12 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
 
         <details class="profile-disclosure">
           <summary><span>Vinculación de cuentas <small>Juegos asociados a tu B&Z ID</small></span><i aria-hidden="true"></i></summary>
-          <div class="profile-disclosure__content">{bzId?.gameAccounts.length ? <div class="linked-games">{bzId.gameAccounts.map((account) => <article><div><strong>{account.gameName}</strong><span>{account.displayName || account.platform}</span></div><span class="identity-status">{account.status}</span></article>)}</div> : <div class="identity-empty"><strong>No hay juegos vinculados</strong><p>La vinculación se habilitará juego por juego mediante un código temporal generado por el servidor oficial. No te pediremos la contraseña del juego.</p><button class="button button--ghost" type="button" disabled>Vincular un juego · próximamente</button></div>}</div>
+          <div class="profile-disclosure__content">{bzId?.gameAccounts.length ? <div class="linked-games">{bzId.gameAccounts.map((account) => <article><div><strong>{account.gameName}</strong><span>{account.displayName || account.platform}</span></div><span class="identity-status">{account.status}</span></article>)}</div> : ufoProfile ? <div class="linked-games"><article><div><strong>UFO RUN</strong><span>Vinculado automáticamente con tu B&Z ID</span></div><span class="identity-status">Activo</span></article></div> : <div class="identity-empty"><strong>UFO RUN está disponible</strong><p>No necesitás ingresar un código: la cuenta se vincula automáticamente la primera vez que entrás al juego con tu B&Z ID.</p>{ufoGame?.play_url ? <a class="button button--ghost button--small" href={ufoGame.play_url} target="_blank" rel="noreferrer">Abrir UFO RUN <span aria-hidden="true">↗</span></a> : <span>Ingresá desde el sitio oficial de UFO RUN.</span>}</div>}</div>
         </details>
 
         <details class="profile-disclosure">
           <summary><span>Estado del perfil <small>Moderación y apelaciones</small></span><i aria-hidden="true"></i></summary>
-          <div class="profile-disclosure__content">{bzId?.moderation.length ? <div class="moderation-list">{bzId.moderation.map((measure) => <article><div><strong>{MODERATION_ACTION_LABELS[measure.action] ?? measure.action}</strong><p>{measure.message}</p><small>Alcance: {measure.scope} · Desde {dateFormatter.format(new Date(measure.startsAt))}{measure.endsAt ? ` hasta ${dateFormatter.format(new Date(measure.endsAt))}` : ''}</small></div>{measure.caseId && !activeAppealCases.has(measure.caseId) && <form class="account-form appeal-form" method="post"><input type="hidden" name="action" value="appeal" /><input type="hidden" name="case_id" value={measure.caseId} /><label>Explicá tu apelación<textarea name="message" minlength="20" maxlength="2000" rows="4" required></textarea></label><button class="button button--ghost button--small" type="submit">Enviar apelación</button></form>}</article>)}</div> : <p class="identity-empty">No tenés medidas de moderación activas.</p>}{bzId?.appeals.length ? <div class="appeal-history"><h3>Historial de apelaciones</h3>{bzId.appeals.map((appeal) => <article><strong>{appeal.status.replace('_', ' ')}</strong><p>{appeal.message}</p>{appeal.decision && <small>Resolución: {appeal.decision}</small>}</article>)}</div> : null}</div>
+          <div class="profile-disclosure__content">{bzId?.moderation.length ? <div class="moderation-list">{bzId.moderation.map((measure) => <article><div><strong>{MODERATION_ACTION_LABELS[measure.action] ?? measure.action}</strong><p>{measure.message}</p><small>Alcance: {moderationScopeLabel(measure)} · Vigencia: {moderationDurationLabel(measure)} · Aplicada el {dateFormatter.format(new Date(measure.startsAt))}</small></div>{measure.caseId && !activeAppealCases.has(measure.caseId) && <form class="account-form appeal-form" method="post"><input type="hidden" name="action" value="appeal" /><input type="hidden" name="case_id" value={measure.caseId} /><label>Explicá tu apelación<textarea name="message" minlength="20" maxlength="2000" rows="4" required></textarea></label><button class="button button--ghost button--small" type="submit">Enviar apelación</button></form>}</article>)}</div> : <p class="identity-empty">No tenés medidas de moderación activas.</p>}{bzId?.appeals.length ? <div class="appeal-history"><h3>Historial de apelaciones</h3>{bzId.appeals.map((appeal) => <article><strong>{appeal.status.replace('_', ' ')}</strong><p>{appeal.message}</p>{appeal.decision && <small>Resolución: {appeal.decision}</small>}</article>)}</div> : null}</div>
         </details>
 
         <details class="profile-disclosure">

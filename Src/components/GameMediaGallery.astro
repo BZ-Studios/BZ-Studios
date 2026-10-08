@@ -21,14 +21,7 @@ const media = [
 ---
 
 {media.length > 0 && (
-  <section class="section game-media-section" id="game-media" aria-labelledby="game-media-title">
-    <div class="shell">
-      <div class="game-media-heading">
-        <div><p class="kicker">Galería multimedia</p><h2 id="game-media-title">Mirá el juego en acción</h2></div>
-        <p>Recorré los videos y las imágenes sin salir de la página.</p>
-      </div>
-
-      <div class="game-media-carousel" data-game-media-carousel tabindex="0" aria-label={`Galería multimedia de ${gameName}`}>
+  <div class="game-media-carousel game-media-carousel--hero" data-game-media-carousel tabindex="0" aria-label={`Videos e imágenes de ${gameName}`}>
         <div class="game-media-stage">
           {media.map((item, mediaIndex) => (
             <figure class:list={['game-media-slide', { 'is-active': mediaIndex === 0 }]} data-media-slide data-media-type={item.type} data-media-index={mediaIndex} hidden={mediaIndex !== 0}>
@@ -61,9 +54,7 @@ const media = [
             </button>
           ))}
         </div>}
-      </div>
-    </div>
-  </section>
+  </div>
 )}
 
 <script>

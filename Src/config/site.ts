@@ -13,14 +13,14 @@ export const siteConfig = {
   ],
   members: ['Luis Zabala', 'Agustín Bustamante'],
   socialLinks: {
-    instagram: '',
+    instagram: 'https://www.instagram.com/bzstudios.games',
     x: '',
     tiktok: '',
-    youtube: '',
+    youtube: 'https://www.youtube.com/@BZStudios_games',
     discord: '',
     email: '',
   },
-  footerSocials: ['instagram', 'tiktok', 'discord'],
+  footerSocials: ['instagram', 'youtube', 'tiktok', 'discord'],
 } as const;
 
 export type SocialKey = keyof typeof siteConfig.socialLinks;

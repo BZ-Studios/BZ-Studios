@@ -268,3 +268,8 @@ document.querySelectorAll<HTMLButtonElement>('[data-delete-message]').forEach((b
   refreshInbox();
   setMessage('Mensaje eliminado.');
 }));
+document.querySelectorAll<HTMLFormElement>('[data-confirm-message]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (!confirm(form.dataset.confirmMessage ?? '¿Confirmar esta acción?')) event.preventDefault();
+  });
+});

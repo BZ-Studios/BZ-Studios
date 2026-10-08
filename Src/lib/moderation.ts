@@ -94,6 +94,64 @@ export async function applyModerationAction(client: ServiceClient, input: Modera
   });
 }
 
+export async function revokeModerationAction(client: ServiceClient, input: { actorUserId: string; actorRole: AdminRole; actionId: string }) {
+  const { data: action, error: actionLookupError } = await client.from('moderation_actions')
+    .select('id, player_id, action_type, revoked_at')
+    .eq('id', input.actionId)
+    .single();
+  if (actionLookupError || !action) throw new Error('No se encontró la medida de moderación.');
+  if (action.revoked_at) throw new Error('Esta medida ya fue retirada.');
+
+  const requiredRole = minimumRoleForAction(action.action_type as ModerationActionType);
+  if (adminRoleRank(input.actorRole) < adminRoleRank(requiredRole)) throw new Error(`Retirar esta medida requiere el rol ${requiredRole}.`);
+
+  const revokedAt = new Date().toISOString();
+  const { error: revokeError } = await client.from('moderation_actions')
+    .update({ revoked_at: revokedAt, revoked_by: input.actorUserId })
+    .eq('id', action.id)
+    .is('revoked_at', null);
+  if (revokeError) throw new Error('No se pudo retirar la medida.');
+
+  const { data: player, error: playerError } = await client.from('players').select('id, auth_user_id').eq('id', action.player_id).single();
+  if (playerError || !player) throw new Error('La medida se retiró, pero no se encontró la cuenta asociada.');
+  const { data: remaining, error: remainingError } = await client.from('moderation_actions')
+    .select('action_type, ends_at')
+    .eq('player_id', player.id)
+    .is('revoked_at', null)
+    .neq('action_type', 'restored')
+    .or(`ends_at.is.null,ends_at.gt.${revokedAt}`);
+  if (remainingError) throw new Error('La medida se retiró, pero no se pudo recalcular el estado de la cuenta.');
+
+  const actions = remaining ?? [];
+  const hasPermanentBan = actions.some((item) => ['indefinite_ban', 'global_ban'].includes(item.action_type));
+  const temporaryEnds = actions
+    .filter((item) => item.action_type === 'temporary_suspension' && item.ends_at)
+    .map((item) => Date.parse(item.ends_at as string))
+    .filter(Number.isFinite);
+  const hasRestriction = actions.some((item) => ['rating_restriction', 'game_restriction'].includes(item.action_type));
+  const nextStatus = hasPermanentBan ? 'banned' : temporaryEnds.length ? 'suspended' : hasRestriction ? 'restricted' : 'active';
+  const { error: statusError } = await client.from('players').update({ status: nextStatus }).eq('id', player.id);
+  if (statusError) throw new Error('La medida se retiró, pero no se pudo actualizar el estado de la cuenta.');
+
+  const longestTemporaryBan = temporaryEnds.length ? Math.max(...temporaryEnds) : 0;
+  const banDuration = hasPermanentBan
+    ? '876000h'
+    : longestTemporaryBan > Date.now()
+      ? `${Math.max(1, Math.ceil((longestTemporaryBan - Date.now()) / 3_600_000))}h`
+      : 'none';
+  const authResult = await client.auth.admin.updateUserById(player.auth_user_id, { ban_duration: banDuration });
+  if (authResult.error) throw new Error('La medida se retiró, pero no se pudo habilitar la autenticación.');
+
+  await client.from('security_audit_events').insert({
+    player_id: player.id,
+    actor_user_id: input.actorUserId,
+    event_type: 'moderation_action_revoked',
+    target_type: 'moderation_action',
+    target_id: action.id,
+    metadata: { action: action.action_type, resultingStatus: nextStatus },
+  });
+}
+
 export async function deletePlayerAccount(client: ServiceClient, input: { actorUserId: string; actorRole: AdminRole; playerId: string; expectedUsername: string; confirmation: string }) {
   if (input.actorRole !== 'owner') throw new Error('Solo el propietario puede eliminar definitivamente una cuenta.');
   if (input.confirmation !== input.expectedUsername) throw new Error('La confirmación no coincide con el nombre de usuario.');

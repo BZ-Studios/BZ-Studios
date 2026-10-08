@@ -153,6 +153,10 @@
 .admin-appeals form { display: grid; gap: .45rem; margin-top: .55rem; }
 .admin-appeals select,.admin-appeals textarea { width: 100%; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 6px; color: #fff; background: #09080e; font: inherit; }
 .admin-appeals textarea { resize: vertical; }
+.admin-active-measure { display: grid; gap: .45rem; padding-bottom: .65rem; }
+.admin-active-measure + .admin-active-measure { padding-top: .65rem; border-top: 1px solid var(--line); }
+.admin-active-measure form { margin: 0; }
+.admin-active-measure .button { min-height: 2rem; padding: .4rem .65rem; }
 .admin-moderation-zone { display: grid; gap: .85rem; margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--line); }
 .admin-moderation-form { padding: 1rem; border: 1px solid rgba(255,193,61,.2); border-radius: 9px; background: rgba(255,193,61,.025); }
 .admin-moderation-form .admin-form-help { margin: 0; color: #9693a0; font-size: .72rem; line-height: 1.55; }
