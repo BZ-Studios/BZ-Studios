@@ -14,6 +14,8 @@ for (const marker of ['data-game-media-carousel', 'data-video-play', 'data-media
   assert.ok(component.includes(marker), `Falta ${marker} en la galería multimedia`);
 }
 assert.ok(component.includes('youtubeIds'), 'La galería debe admitir videos adicionales');
+assert.ok(component.indexOf('...images.map') < component.indexOf('...youtubeIds.map'), 'La portada y las capturas deben aparecer antes que los videos');
+assert.ok(component.includes('[cover, ...screenshots]'), 'La portada debe ocupar siempre la primera posición');
 assert.ok(!component.includes('data-open-game-trailer'), 'El tráiler no debe formar parte de la galería multimedia');
 assert.ok(!component.includes('Captura ${item.index + 1}</span>'), 'Las miniaturas no deben mostrar títulos');
 

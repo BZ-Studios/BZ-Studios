@@ -13,10 +13,12 @@ const youtubeIds = videoUrls
   .map(getYouTubeVideoId)
   .filter((id): id is string => Boolean(id))
   .filter((id, index, ids) => ids.indexOf(id) === index);
-const images = screenshots.length ? screenshots : cover ? [cover] : [];
+const images = [cover, ...screenshots]
+  .filter((src): src is string => Boolean(src))
+  .filter((src, index, sources) => sources.indexOf(src) === index);
 const media = [
+  ...images.map((src, index) => ({ type: 'image' as const, src, index, isCover: src === cover })),
   ...youtubeIds.map((youtubeId) => ({ type: 'video' as const, src: getYouTubeThumbnailUrl(youtubeId), youtubeId })),
-  ...images.map((src, index) => ({ type: 'image' as const, src, index })),
 ];
 ---
 
@@ -34,7 +36,7 @@ const media = [
                   <div class="game-media-video__player" data-video-player hidden></div>
                 </div>
               ) : (
-                <img src={item.src} alt={`Captura ${item.index + 1} de ${gameName}`} loading={mediaIndex === 0 ? 'eager' : 'lazy'} width="1280" height="720" />
+                <img src={item.src} alt={item.isCover ? `Portada de ${gameName}` : `Captura ${cover ? item.index : item.index + 1} de ${gameName}`} loading={mediaIndex === 0 ? 'eager' : 'lazy'} width="1280" height="720" />
               )}
             </figure>
           ))}
@@ -48,7 +50,7 @@ const media = [
 
         {media.length > 1 && <div class="game-media-thumbnails" role="tablist" aria-label="Seleccionar elemento de la galería">
           {media.map((item, mediaIndex) => (
-            <button type="button" role="tab" class:list={['game-media-thumbnail', { 'is-active': mediaIndex === 0 }]} aria-label={item.type === 'video' ? `Ver video de ${gameName}` : `Ver imagen ${item.index + 1} de ${gameName}`} aria-selected={mediaIndex === 0 ? 'true' : 'false'} data-media-thumbnail data-media-index={mediaIndex}>
+            <button type="button" role="tab" class:list={['game-media-thumbnail', { 'is-active': mediaIndex === 0 }]} aria-label={item.type === 'video' ? `Ver video de ${gameName}` : item.isCover ? `Ver portada de ${gameName}` : `Ver imagen ${cover ? item.index : item.index + 1} de ${gameName}`} aria-selected={mediaIndex === 0 ? 'true' : 'false'} data-media-thumbnail data-media-index={mediaIndex}>
               <img src={item.src} alt="" loading="lazy" width="240" height="135" />
               {item.type === 'video' && <i aria-hidden="true">▶</i>}
             </button>
