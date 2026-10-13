@@ -15,12 +15,12 @@ export const siteConfig = {
   socialLinks: {
     instagram: 'https://www.instagram.com/bzstudios.games',
     x: '',
-    tiktok: '',
+    tiktok: 'https://www.tiktok.com/@bzstudios.games',
     youtube: 'https://www.youtube.com/@BZStudios_games',
     discord: '',
     email: '',
   },
-  footerSocials: ['instagram', 'youtube', 'tiktok', 'discord'],
+  footerSocials: ['instagram', 'tiktok', 'youtube'],
 } as const;
 
 export type SocialKey = keyof typeof siteConfig.socialLinks;

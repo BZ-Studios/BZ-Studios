@@ -14,6 +14,11 @@ const required = {
     'LOCAL_IMPORT_ALREADY_USED',
     'enable row level security',
   ],
+  'supabase/migrations/202610130001_ufo_run_automatic_link.sql': [
+    'insert into public.player_game_accounts',
+    'create or replace function public.ufo_run_initialize_player',
+    "'automatic', true",
+  ],
   'Src/pages/cuenta/bz-id.astro': ['signInWithOtp', 'verifyOtp', "type: 'email'", 'Código de acceso'],
   'Src/pages/api/bz-id/v1/ufo-run/[operation].ts': [
     "operation === 'profile'", "operation === 'ranking'", "operation === 'scores'",
