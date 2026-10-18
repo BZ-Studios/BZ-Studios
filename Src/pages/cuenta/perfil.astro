@@ -158,7 +158,7 @@ const moderationDurationLabel = (measure: BzIdentityPayload['moderation'][number
         {bzId?.identity.createdAt && <div><dt>Creación</dt><dd>{dateFormatter.format(new Date(bzId.identity.createdAt))}</dd></div>}
       </dl>
       <dialog class="site-dialog username-change-dialog" id="username-change-dialog" data-modal-dialog aria-labelledby="username-change-title">
-        <div class="username-change-dialog__heading"><div><p class="kicker">Identidad pública</p><h2 id="username-change-title">Editar nombre</h2></div><button type="button" data-modal-close aria-label="Cerrar">×</button></div>
+        <div class="username-change-dialog__heading"><div><p class="kicker">Identidad pública</p><h2 id="username-change-title">Editar nombre</h2></div><button type="button" data-modal-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
         <div class:list={['username-change-panel', { 'is-locked': usernameLocked }]} style={`--username-cooldown-progress:${usernameCooldownProgress}%`}>
           <div class="username-change-panel__heading">
             <div><span class="username-change-panel__eyebrow">Cambio de nombre</span><strong>{usernameLocked ? 'Tiempo de espera activo' : 'Cambio disponible'}</strong></div>

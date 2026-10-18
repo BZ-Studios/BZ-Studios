@@ -514,7 +514,8 @@ html[data-media-expanded],html[data-media-expanded] body { overflow: hidden; }
 .username-change-dialog { width: min(calc(100% - 2rem),48rem); max-height: 90svh; overflow: auto; }
 .username-change-dialog__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .username-change-dialog__heading h2 { margin-bottom: .25rem; font-size: clamp(2rem,6vw,3.25rem); }
-.username-change-dialog__heading > button { font-size: 1.4rem; }
+.username-change-dialog .username-change-dialog__heading > [data-modal-close] { display: flex; align-items: center; justify-content: center; font-size: 0; line-height: 0; }
+.username-change-dialog__heading > [data-modal-close] > svg { display: block; flex: 0 0 auto; width: 1.125rem; height: 1.125rem; pointer-events: none; }
 .username-change-panel { display: grid; gap: 1rem; margin-top: 1.25rem; padding: clamp(1rem,3vw,1.35rem); border: 1px solid rgba(243,41,168,.26); border-radius: 10px; background: radial-gradient(circle at 100% 0,rgba(255,193,61,.08),transparent 38%),linear-gradient(145deg,rgba(124,25,230,.08),rgba(0,0,0,.2)); }
 .username-change-panel.is-locked { border-color: rgba(255,255,255,.12); background: radial-gradient(circle at 100% 0,rgba(124,25,230,.1),transparent 40%),rgba(0,0,0,.2); }
 .username-change-panel__heading,.username-change-timing { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
