@@ -10,6 +10,7 @@
     "preview": "node ./node_modules/astro/bin/astro.mjs preview",
     "test:bz-id": "node scripts/check-bz-id-contract.mjs",
     "test:media": "node scripts/check-game-media.mjs",
+    "test:game-access": "node scripts/check-game-access.mjs",
     "test:ufo-run": "node scripts/check-ufo-run-contract.mjs"
   },
   "dependencies": {

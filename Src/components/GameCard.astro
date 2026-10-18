@@ -1,6 +1,7 @@
 ---
 import type { Game } from '../types/game';
 import RatingSummary from './RatingSummary.astro';
+import GameLaunch from './GameLaunch.astro';
 
 interface Props { game: Game }
 const { game } = Astro.props;
@@ -28,9 +29,7 @@ const monogram = game.name.split(/\s+/).map((word) => word[0]).join('').slice(0,
     <p>{game.shortDescription}</p>
     <RatingSummary average={game.ratingAverage} count={game.ratingCount} compact />
     <div class="game-card__actions">
-      {game.playUrl && game.status !== 'Próximamente' && (
-        <a class="button button--primary button--small" data-card-play href={game.playUrl} target="_blank" rel="noreferrer">Jugar <span aria-hidden="true">↗</span></a>
-      )}
+      <GameLaunch game={game} compact />
       <a class="text-link" href={`/juegos/${game.slug}/`}>Más información <span aria-hidden="true">→</span></a>
     </div>
   </div>

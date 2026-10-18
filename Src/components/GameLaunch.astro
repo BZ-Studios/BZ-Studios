@@ -1,0 +1,25 @@
+---
+import type { Game } from '../types/game';
+import { getGameAccess } from '../lib/game-access.mjs';
+
+interface Props {
+  game: Game;
+  compact?: boolean;
+}
+
+const { game, compact = false } = Astro.props;
+const { href, isPreview } = getGameAccess(game);
+const label = isPreview ? 'Ver vista previa' : compact ? 'Jugar' : 'Jugar ahora';
+---
+
+{href && (
+  <a
+    class:list={['button', 'button--primary', { 'button--small': compact }]}
+    data-card-play
+    href={href}
+    target={isPreview ? undefined : '_blank'}
+    rel={isPreview ? undefined : 'noreferrer'}
+  >
+    {label} <span aria-hidden="true">{isPreview ? '→' : '↗'}</span>
+  </a>
+)}

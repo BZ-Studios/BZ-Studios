@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GameMediaGallery from '../../../components/GameMediaGallery.astro';
+import { getPublicGameBySlug } from '../../../lib/games';
+import { getGameAccess } from '../../../lib/game-access.mjs';
+
+const game = await getPublicGameBySlug(Astro.params.slug ?? '');
+if (!game) return Astro.redirect('/404/', 302);
+const { isPreview, playUrl } = getGameAccess(game);
+if (!isPreview) return Astro.redirect(`/juegos/${game.slug}/`, 302);
+
+// Keep the scripts that draw the game, but never allow forms, popups,
+// top navigation or pointer lock. Only external games retain their origin;
+// same-origin content must not be able to remove its own sandbox.
+const isExternal = playUrl && new URL(playUrl).origin !== Astro.url.origin;
+const frameSandbox = isExternal ? 'allow-scripts allow-same-origin' : 'allow-scripts';
+const hasMedia = Boolean(game.cover || game.screenshots?.length || game.videoUrls?.length);
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+
+<BaseLayout title={`Vista previa de ${game.name}`} description={`Conocé cómo va quedando ${game.name}, un juego en desarrollo de B&Z Studios.`} image={game.cover} noindex>
+  <section class="game-preview-page">
+    <div class="shell">
+      <a class="game-back-link" href={`/juegos/${game.slug}/`}><span aria-hidden="true">←</span> Volver a {game.name}</a>
+      <header class="game-preview-heading">
+        <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
+        <p class="kicker">Vista previa</p>
+        <h1>{game.name}</h1>
+        <p class="lead" id="preview-description">Así va quedando el juego. Esta vista es solo para mirar; los controles están deshabilitados.</p>
+      </header>
+
+      {playUrl ? (
+        <>
+          <div class="game-preview-frame" role="img" aria-label={`Vista del juego ${game.name}, sin interacción`} aria-describedby="preview-description">
+            <div class="game-preview-frame__content" inert aria-hidden="true">
+              <iframe
+                src={playUrl}
+                title={`Vista previa de ${game.name}`}
+                tabindex="-1"
+                sandbox={frameSandbox}
+                allow="gamepad 'none'; autoplay 'none'; fullscreen 'none'; accelerometer 'none'; gyroscope 'none'; microphone 'none'; camera 'none'; clipboard-read 'none'; clipboard-write 'none'"
+                referrerpolicy="no-referrer"
+              ></iframe>
+            </div>
+            <div class="game-preview-frame__shield" aria-hidden="true"><span>Solo vista previa · En desarrollo</span></div>
+          </div>
+          <p class="game-preview-note">Si la vista no se muestra, podés consultar las imágenes y videos publicados en la ficha del juego.</p>
+        </>
+      ) : hasMedia ? (
+        <GameMediaGallery gameName={game.name} cover={game.cover} screenshots={game.screenshots} videoUrls={game.videoUrls} />
+      ) : (
+        <div class="game-preview-empty"><h2>Pronto vas a ver más</h2><p>Estamos preparando la primera vista previa de este juego.</p></div>
+      )}
+
+      <div class="button-row">
+        <a class="button button--ghost" href={`/juegos/${game.slug}/`}>Ver información del juego <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .game-preview-page { padding: 7rem 0 4rem; }
+  .game-preview-heading { margin: 2rem 0; }
+  .game-preview-heading .kicker { margin-top: 1.4rem; }
+  .game-preview-heading h1 { font-size: clamp(2.8rem, 6vw, 5.5rem); overflow-wrap: anywhere; }
+  .game-preview-heading .lead { max-width: 50rem; }
+  .game-preview-frame { position: relative; height: clamp(22rem, 65vh, 48rem); overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .game-preview-frame__content, iframe, .game-preview-frame__shield { position: absolute; inset: 0; width: 100%; height: 100%; }
+  iframe { border: 0; pointer-events: none; }
+  .game-preview-frame__shield { z-index: 1; display: flex; align-items: end; justify-content: center; padding: 1rem; touch-action: pan-y; }
+  .game-preview-frame__shield span { padding: .45rem .8rem; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(5, 3, 8, .92); color: var(--yellow); font-size: .75rem; font-weight: 800; text-align: center; }
+  .game-preview-empty { padding: 3rem 1.5rem; border: 1px solid var(--line); background: var(--surface); text-align: center; }
+  .game-preview-empty h2 { font-size: clamp(2rem, 5vw, 3.5rem); }
+  @media (max-width: 600px) { .game-preview-page { padding-top: 6rem; } }
+</style>

@@ -230,6 +230,7 @@ p { color: var(--muted); }
 .game-detail-hero__grid > img { width: 100%; border: 1px solid var(--line); }
 .game-detail-hero h1 { margin: .35rem 0 .75rem; font-size: clamp(3rem,6vw,6.5rem); line-height: .82; }
 .game-detail-hero .lead { margin-bottom: 1.1rem; font-size: clamp(.95rem,1.45vw,1.15rem); }
+.game-preview-note { color: var(--muted); font-size: .88rem; margin-top: 1rem; }
 .game-detail-placeholder { position: relative; min-height: clamp(20rem,36vw,27rem); overflow: hidden; border: 1px solid var(--line); }
 .game-detail-hero .kicker { margin-top: 1.5rem; }
 .feature-list { list-style: none; padding: 0; display: grid; gap: .8rem; }

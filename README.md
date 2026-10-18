@@ -41,6 +41,10 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 
 La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante, consultar usuarios con sus calificaciones y administrar los mensajes recibidos.
 
+Los juegos con estado **En desarrollo** muestran **Ver vista previa** tanto en su tarjeta como en su ficha. El botón abre `/juegos/slug-del-juego/vista-previa/`: un visor de la URL del juego sin interacción por mouse, tacto ni teclado. No hace falta modificar el juego ni aplicar migraciones. Si no hay URL, se muestran las imágenes y videos publicados, o un aviso si todavía no hay material. **Disponible** y **Demo** conservan el acceso para jugar; **Próximamente** no muestra ninguno de estos botones.
+
+El sitio del juego debe permitir cargarse en un iframe. El visor bloquea foco y eventos, usa sandbox y restringe permisos (incluidos gamepad y pantalla completa). Muestra el estado inicial que el juego cargue por sí solo: no puede avanzar automáticamente un menú ni controlar partes internas del juego. Es una restricción de interacción del portal, no una protección de la URL original: si el juego es público en otro dominio, seguirá accesible allí. Para restringir también ese acceso hay que configurar el servidor del juego.
+
 ## Contenido y configuración
 
 - Redes sociales: `Src/config/site.ts`. Las URLs vacías no se muestran.
