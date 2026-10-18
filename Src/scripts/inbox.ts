@@ -49,6 +49,7 @@ inboxClear?.addEventListener('click', () => {
   if (inboxFrom) inboxFrom.value = '';
   if (inboxTo) inboxTo.value = '';
   if (inboxOrder) inboxOrder.value = 'newest';
+  document.dispatchEvent(new Event('bz:form-controls-refresh'));
   refreshInbox();
   inboxSearch?.focus();
 });

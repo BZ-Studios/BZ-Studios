@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { AstroCookies } from 'astro';
 import { createSupabaseServerClient } from './supabase';
 import { siteConfig } from '../config/site';
+import { isSameOriginRequest } from './security.mjs';
 
 export { usernamePattern, validPassword } from './credentials';
 export const accountRedirectUrl = (path: string) => new URL(path, import.meta.env.PUBLIC_SITE_URL || siteConfig.url).href;
@@ -10,7 +11,7 @@ export const safeNext = (value: string | null, fallback = '/cuenta/perfil/') => 
   const target = new URL(value, 'https://local.invalid');
   return target.origin === 'https://local.invalid' ? `${target.pathname}${target.search}${target.hash}` : fallback;
 };
-export const sameOrigin = (request: Request) => !request.headers.get('origin') || request.headers.get('origin') === new URL(request.url).origin;
+export const sameOrigin = isSameOriginRequest;
 
 export async function getAccount(request: Request, cookies: AstroCookies) {
   const supabase = createSupabaseServerClient({ request, cookies });

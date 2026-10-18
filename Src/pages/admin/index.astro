@@ -10,6 +10,7 @@ import { ADMIN_ROLE_LABELS, MODERATION_ACTION_LABELS, PLAYER_STATUS_LABELS, type
 import { fallbackMembers } from '../../lib/members';
 import { GAME_GENRES } from '../../config/gameGenres';
 import { GAME_STATUSES } from '../../types/game';
+import { serializeInlineJson } from '../../lib/security.mjs';
 
 const session = await getAdminSession(Astro.request, Astro.cookies);
 if (!session.user || !session.isAdmin || !session.supabase) return Astro.redirect('/admin/login/');
@@ -459,6 +460,6 @@ const serializedGames = games.map((game) => ({
       <form method="post" action="/admin/logout/"><button class="button button--danger" type="submit">Sí, salir</button></form>
     </div>
   </dialog>
-  <script is:inline type="application/json" id="admin-games" set:html={JSON.stringify(serializedGames).replace(/</g, '\\u003c')} />
+  <script is:inline type="application/json" id="admin-games" set:html={serializeInlineJson(serializedGames)} />
   <script>import '../../scripts/admin';</script>
 </AdminLayout>

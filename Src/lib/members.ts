@@ -1,6 +1,7 @@
 import { siteConfig } from '../config/site';
 import type { StudioMember } from '../types/member';
 import { createPublicClient } from './supabase';
+import { getGameUrl } from './game-access.mjs';
 
 interface MemberRow {
   id: string;
@@ -35,7 +36,7 @@ export async function getPublicMembers(): Promise<StudioMember[]> {
     id: member.id,
     name: member.name,
     role: member.role,
-    instagramUrl: member.instagram_url ?? undefined,
+    instagramUrl: getGameUrl(member.instagram_url ?? undefined),
     sortOrder: member.sort_order,
     isVisible: member.is_visible,
   }));

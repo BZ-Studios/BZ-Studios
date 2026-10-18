@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
 import { createPublicClient } from '../../lib/supabase';
+import { CONTACT_LIMITS, parseContactForm } from '../../lib/contact.mjs';
+import { escapeHtml, isSameOriginRequest, readLimitedFormData } from '../../lib/security.mjs';
 
 export const prerender = false;
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
-const allowedCategories = new Set(['Idea', 'Sugerencia', 'Problema', 'Apelación', 'Feedback sobre un juego', 'Consulta', 'Otro']);
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] ?? character);
 
 async function notifyByEmail({ name, email, category, message }: { name: string; email: string; category: string; message: string }) {
   const apiKey = import.meta.env.RESEND_API_KEY;
@@ -40,18 +40,18 @@ async function notifyByEmail({ name, email, category, message }: { name: string;
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  const form = await request.formData();
-  if (String(form.get('bot-field') ?? '')) return redirect(request, '/contacto/?enviado=1');
-
-  const name = String(form.get('name') ?? '').trim();
-  const email = String(form.get('email') ?? '').trim().toLowerCase();
-  const category = String(form.get('category') ?? '').trim();
-  const message = String(form.get('message') ?? '').trim();
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (name.length < 2 || name.length > 100 || !emailPattern.test(email) || email.length > 254 || !allowedCategories.has(category) || message.length < 10 || message.length > 5000) {
-    return redirect(request, '/contacto/?error=1');
+  if (!isSameOriginRequest(request)) return new Response('Solicitud no válida.', { status: 403 });
+  const contentType = request.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+  if (!['application/x-www-form-urlencoded', 'multipart/form-data'].includes(contentType ?? '')) return new Response('Formato no admitido.', { status: 415 });
+  let form: FormData;
+  try { form = await readLimitedFormData(request, CONTACT_LIMITS.bodyMax); }
+  catch (error) {
+    return new Response(error instanceof RangeError ? 'Mensaje demasiado grande.' : 'Formulario no válido.', { status: error instanceof RangeError ? 413 : 400 });
   }
+  if (String(form.get('bot-field') ?? '')) return redirect(request, '/contacto/?enviado=1');
+  const contact = parseContactForm(form);
+  if (!contact) return redirect(request, '/contacto/?error=1');
+  const { name, email, category, message } = contact;
 
   const supabase = createPublicClient();
   if (!supabase) return redirect(request, '/contacto/?error=1');

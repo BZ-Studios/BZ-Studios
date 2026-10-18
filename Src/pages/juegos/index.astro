@@ -6,6 +6,8 @@ import { GAME_GENRES } from '../../config/gameGenres';
 import { getPublicGames } from '../../lib/games';
 
 const games = await getPublicGames();
+const usedGenres = new Set(games.flatMap((game) => game.genres));
+const genres = [...GAME_GENRES.filter((genre) => usedGenres.has(genre)), ...[...usedGenres].filter((genre) => !GAME_GENRES.some((known) => known === genre)).sort((a, b) => a.localeCompare(b, 'es'))];
 ---
 
 <BaseLayout title="Juegos indie para jugar online" description="Explorá los videojuegos independientes de B&Z Studios, conocé sus controles y jugá online directamente desde tu navegador.">
@@ -25,7 +27,7 @@ const games = await getPublicGames();
             <div class="genre-filter__control">
               <select id="genre-filter" data-genre-filter aria-label="Filtrar juegos por género">
                 <option value="all">Todos</option>
-                {GAME_GENRES.map((genre) => <option value={genre}>{genre}</option>)}
+                {genres.map((genre) => <option value={genre}>{genre}</option>)}
               </select>
             </div>
           </div>

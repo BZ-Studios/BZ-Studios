@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { siteConfig } from '../config/site';
 import '../styles/global.css';
+import { serializeInlineJson } from '../lib/security.mjs';
 
 interface Props {
   title?: string;
@@ -91,8 +92,8 @@ const baseSchema = {
     <meta name="twitter:image" content={imageUrl} />
     <meta name="twitter:image:alt" content={imageAlt} />
     <title>{pageTitle}</title>
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(baseSchema)} />
-    {schema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
+    <script is:inline type="application/ld+json" set:html={serializeInlineJson(baseSchema)} />
+    {schema && <script is:inline type="application/ld+json" set:html={serializeInlineJson(schema)} />}
   </head>
   <body>
     <Header />
@@ -101,6 +102,7 @@ const baseSchema = {
     <Footer />
 <script>
   import '../scripts/dialogs';
+  import '../scripts/form-controls';
   // One observer, no scroll listeners; content stays visible without JavaScript.
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (!motionPreference.matches && 'IntersectionObserver' in window) {

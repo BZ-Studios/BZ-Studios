@@ -2,6 +2,7 @@ import type { Game, GameControl, GameStatus } from '../types/game';
 import { games as fallbackGames } from '../data/games';
 import { normalizeGameGenres } from '../config/gameGenres';
 import { createPublicClient } from './supabase';
+import { getGameUrl } from './game-access.mjs';
 
 interface GameImageRow {
   id: string;
@@ -54,12 +55,12 @@ function mapGame(row: GameRow): Game {
     description: row.description,
     cover: cover ? publicImageUrl(cover.storage_path) : undefined,
     screenshots,
-    trailerUrl: row.trailer_url ?? undefined,
+    trailerUrl: getGameUrl(row.trailer_url ?? undefined),
     videoUrls: row.video_urls ?? [],
     platforms: row.platforms ?? [],
     genres: normalizeGameGenres(row.genres),
     status: row.status,
-    playUrl: row.play_url ?? undefined,
+    playUrl: getGameUrl(row.play_url ?? undefined),
     controls: row.controls ?? [],
     features: row.features ?? [],
     publishedAt: row.published_at ?? undefined,

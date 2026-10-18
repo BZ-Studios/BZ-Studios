@@ -11,6 +11,7 @@
     "test:bz-id": "node scripts/check-bz-id-contract.mjs",
     "test:media": "node scripts/check-game-media.mjs",
     "test:game-access": "node scripts/check-game-access.mjs",
+    "test:security": "node scripts/check-security.mjs",
     "test:ufo-run": "node scripts/check-ufo-run-contract.mjs"
   },
   "dependencies": {
@@ -19,6 +20,9 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "astro": "latest"
+  },
+  "overrides": {
+    "path-to-regexp": "^6.3.0"
   },
   "devDependencies": {
     "@astrojs/check": "latest",

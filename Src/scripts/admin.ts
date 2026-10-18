@@ -36,13 +36,14 @@ function resetEditor() {
   if (visible) visible.checked = true;
   if (editorTitle) editorTitle.textContent = 'Nuevo juego';
   if (mediaBox) mediaBox.hidden = true;
-  if (mediaList) mediaList.innerHTML = '';
+  mediaList?.replaceChildren();
 }
 
 function openEditor() {
   if (!editor) return;
   editor.hidden = false;
   gameWorkspace?.classList.add('is-editing');
+  document.dispatchEvent(new Event('bz:form-controls-refresh'));
   requestAnimationFrame(() => editor.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 }
 
@@ -55,14 +56,25 @@ function closeEditor() {
 
 function renderMedia(game: AdminGame) {
   if (!mediaBox || !mediaList) return;
-  mediaList.innerHTML = '';
+  mediaList.replaceChildren();
   mediaBox.hidden = game.game_images.length === 0;
   game.game_images.sort((a, b) => a.sort_order - b.sort_order).forEach((image) => {
     const item = document.createElement('article');
     item.className = 'admin-media__item';
-    item.innerHTML = `<img src="${image.public_url}" alt=""><div class="admin-media__row"><input type="number" min="0" value="${image.sort_order}" aria-label="Orden"><button class="button button--ghost button--small" type="button">Ordenar</button><button class="button button--danger button--small" type="button">Quitar</button></div>`;
-    const [orderButton, deleteButton] = item.querySelectorAll<HTMLButtonElement>('button');
-    const orderInput = item.querySelector<HTMLInputElement>('input');
+    const preview = document.createElement('img');
+    preview.src = image.public_url;
+    preview.alt = '';
+    const row = document.createElement('div');
+    row.className = 'admin-media__row';
+    const orderInput = document.createElement('input');
+    orderInput.type = 'number'; orderInput.min = '0'; orderInput.value = String(image.sort_order);
+    orderInput.setAttribute('aria-label', 'Orden');
+    const orderButton = document.createElement('button');
+    orderButton.type = 'button'; orderButton.className = 'button button--ghost button--small'; orderButton.textContent = 'Ordenar';
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button'; deleteButton.className = 'button button--danger button--small'; deleteButton.textContent = 'Quitar';
+    row.append(orderInput, orderButton, deleteButton);
+    item.append(preview, row);
     orderButton.addEventListener('click', async () => {
       const { error } = await supabase.from('game_images').update({ sort_order: Number(orderInput?.value ?? 0) }).eq('id', image.id);
       if (error) return setMessage('No se pudo actualizar el orden de la imagen.', 'error');
@@ -105,7 +117,8 @@ function editGame(game: AdminGame) {
 
 async function uploadImages(gameId: string, files: File[], kind: 'cover' | 'screenshot', alt: string) {
   if (!files.length) return;
-  if (files.some((file) => file.size > 8 * 1024 * 1024 || !file.type.startsWith('image/'))) throw new Error('Las imágenes deben pesar menos de 8 MB y tener un formato válido.');
+  const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/avif']);
+  if (files.some((file) => file.size > 8 * 1024 * 1024 || !allowedTypes.has(file.type))) throw new Error('Usá imágenes PNG, JPG, WebP o AVIF de hasta 8 MB.');
 
   if (kind === 'cover') {
     const { data: oldCovers } = await supabase.from('game_images').select('id, storage_path').eq('game_id', gameId).eq('kind', 'cover');

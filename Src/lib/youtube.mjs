@@ -12,6 +12,7 @@ export function getYouTubeVideoId(value) {
 
   try {
     const url = new URL(candidate);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null;
     const host = url.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
     let id = '';
 
@@ -31,7 +32,7 @@ export function getYouTubeVideoId(value) {
 }
 
 /** @param {string} id */
-export const getYouTubeEmbedUrl = (id) => `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1`;
+export const getYouTubeEmbedUrl = (id) => `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&controls=1&fs=1`;
 
 /** @param {string} id */
 export const getYouTubeThumbnailUrl = (id) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
