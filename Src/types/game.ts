@@ -21,6 +21,8 @@ export interface Game {
   genres: string[];
   status: GameStatus;
   playUrl?: string;
+  previewDesktop?: boolean;
+  previewMobile?: boolean;
   controls?: GameControl[];
   features?: string[];
   publishedAt?: string;

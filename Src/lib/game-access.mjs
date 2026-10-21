@@ -14,12 +14,26 @@ export function getGameUrl(value) {
 /** @param {import('../types/game').Game} game */
 export function getGameAccess(game) {
   const playUrl = getGameUrl(game.playUrl);
-  const isPreview = game.status === 'En desarrollo';
-  const canPlay = Boolean(playUrl && (game.status === 'Disponible' || game.status === 'Demo'));
+  const canPlay = Boolean(playUrl && ['Disponible', 'Demo', 'En desarrollo'].includes(game.status));
+  const previewDevices = getPreviewDevices(game);
+  const canPreview = game.status !== 'Próximamente' && (previewDevices.desktop || previewDevices.mobile);
   return {
-    isPreview,
     canPlay,
+    canPreview,
+    previewDevices,
     playUrl,
-    href: isPreview ? `/juegos/${game.slug}/vista-previa/` : canPlay ? playUrl : undefined,
+    previewHref: canPreview ? `/juegos/${encodeURIComponent(game.slug)}/vista-previa/` : undefined,
+    href: canPlay ? playUrl : undefined,
+  };
+}
+
+/** Defaults also keep the catalog usable before the preview migration is applied.
+ * @param {Pick<import('../types/game').Game, 'slug' | 'status' | 'previewDesktop' | 'previewMobile'>} game
+ */
+export function getPreviewDevices(game) {
+  const knownMobilePreview = ['monkey-climb-remastered', 'ufo-run'].includes(game.slug);
+  return {
+    desktop: game.previewDesktop ?? game.status !== 'Próximamente',
+    mobile: game.previewMobile ?? knownMobilePreview,
   };
 }

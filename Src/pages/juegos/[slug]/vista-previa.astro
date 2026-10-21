@@ -6,8 +6,8 @@ import { getGameAccess } from '../../../lib/game-access.mjs';
 
 const game = await getPublicGameBySlug(Astro.params.slug ?? '');
 if (!game) return Astro.redirect('/404/', 302);
-const { isPreview, playUrl } = getGameAccess(game);
-if (!isPreview) return Astro.redirect(`/juegos/${game.slug}/`, 302);
+const { canPreview, previewDevices, playUrl } = getGameAccess(game);
+if (!canPreview) return Astro.redirect(`/juegos/${game.slug}/`, 302);
 
 // Keep the scripts that draw the game, but never allow forms, popups,
 // top navigation or pointer lock. Only external games retain their origin;
@@ -18,21 +18,23 @@ const hasMedia = Boolean(game.cover || game.screenshots?.length || game.videoUrl
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---
 
-<BaseLayout title={`Vista previa de ${game.name}`} description={`Conocé cómo va quedando ${game.name}, un juego en desarrollo de B&Z Studios.`} image={game.cover} noindex>
-  <section class="game-preview-page">
+<BaseLayout title={`Vista previa de ${game.name}`} description={`Mirá una vista previa de ${game.name}, de B&Z Studios.`} image={game.cover} noindex>
+  <section class="game-preview-page" data-game-preview data-preview-desktop={String(previewDevices.desktop)} data-preview-mobile={String(previewDevices.mobile)}>
     <div class="shell">
       <a class="game-back-link" href={`/juegos/${game.slug}/`}><span aria-hidden="true">←</span> Volver a {game.name}</a>
       <header class="game-preview-heading">
         <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
         <p class="kicker">Vista previa</p>
         <h1>{game.name}</h1>
-        <p class="lead" id="preview-description">Así va quedando el juego. Esta vista es solo para mirar; los controles están deshabilitados.</p>
+        <p class="lead" id="preview-description">Conocé el juego antes de entrar. Esta vista es solo para mirar.</p>
       </header>
 
+      <div data-preview-available hidden>
       {playUrl ? (
         <>
           <div class="game-preview-frame" role="img" aria-label={`Vista del juego ${game.name}, sin interacción`} aria-describedby="preview-description">
-            <div class="game-preview-frame__content" inert aria-hidden="true">
+            <div class="game-preview-frame__content" inert aria-hidden="true" data-preview-mount></div>
+            <template data-preview-template>
               <iframe
                 src={playUrl}
                 title={`Vista previa de ${game.name}`}
@@ -41,8 +43,8 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 allow="gamepad 'none'; autoplay 'none'; fullscreen 'none'; accelerometer 'none'; gyroscope 'none'; microphone 'none'; camera 'none'; clipboard-read 'none'; clipboard-write 'none'"
                 referrerpolicy="no-referrer"
               ></iframe>
-            </div>
-            <div class="game-preview-frame__shield" aria-hidden="true"><span>Solo vista previa · En desarrollo</span></div>
+            </template>
+            <div class="game-preview-frame__shield" aria-hidden="true"><span>Solo vista previa</span></div>
           </div>
           <p class="game-preview-note">Si la vista no se muestra, podés consultar las imágenes y videos publicados en la ficha del juego.</p>
         </>
@@ -51,6 +53,9 @@ Astro.response.headers.set('Cache-Control', 'no-store');
       ) : (
         <div class="game-preview-empty"><h2>Pronto vas a ver más</h2><p>Estamos preparando la primera vista previa de este juego.</p></div>
       )}
+      </div>
+      <p class="identity-note" data-preview-unavailable hidden>{previewDevices.desktop ? 'La vista previa de este juego está disponible en PC.' : 'La vista previa de este juego está disponible en celular.'} Podés consultar sus imágenes y videos en la ficha del juego.</p>
+      <noscript><p class="identity-note">Activá JavaScript para abrir la vista previa.</p></noscript>
 
       <div class="button-row">
         <a class="button button--ghost" href={`/juegos/${game.slug}/`}>Ver información del juego <span aria-hidden="true">→</span></a>
@@ -58,6 +63,27 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-game-preview]').forEach((root) => {
+    const mobile = window.matchMedia('(max-width: 767px)');
+    const available = root.querySelector<HTMLElement>('[data-preview-available]');
+    const unavailable = root.querySelector<HTMLElement>('[data-preview-unavailable]');
+    const mount = root.querySelector<HTMLElement>('[data-preview-mount]');
+    const template = root.querySelector<HTMLTemplateElement>('[data-preview-template]');
+    const sync = () => {
+      const allowed = mobile.matches ? root.dataset.previewMobile === 'true' : root.dataset.previewDesktop === 'true';
+      if (available) available.hidden = !allowed;
+      if (unavailable) unavailable.hidden = allowed;
+      if (mount && template) {
+        if (allowed && !mount.children.length) mount.append(template.content.cloneNode(true));
+        if (!allowed) mount.replaceChildren();
+      }
+    };
+    mobile.addEventListener('change', sync);
+    sync();
+  });
+</script>
 
 <style>
   .game-preview-page { padding: 7rem 0 4rem; }

@@ -41,7 +41,7 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 
 La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante, consultar usuarios con sus calificaciones y administrar los mensajes recibidos.
 
-Los juegos con estado **En desarrollo** muestran **Ver vista previa** tanto en su tarjeta como en su ficha. El botón abre `/juegos/slug-del-juego/vista-previa/`: un visor de la URL del juego sin interacción por mouse, tacto ni teclado. No hace falta modificar el juego ni aplicar migraciones. Si no hay URL, se muestran las imágenes y videos publicados, o un aviso si todavía no hay material. **Disponible** y **Demo** conservan el acceso para jugar; **Próximamente** no muestra ninguno de estos botones.
+Las tarjetas muestran **Jugar** cuando el juego tiene URL y está Disponible, en Demo o En desarrollo. **Ver vista previa** aparece únicamente en la ficha, de forma independiente. El administrador puede habilitar la vista previa para PC, celular, ambos o ninguno. Aplicá `202610210001_game_preview_devices.sql`: configura Monkey Climb y UFO RUN para ambos dispositivos, y Aura Battle solo para PC. El botón abre `/juegos/slug-del-juego/vista-previa/`, un visor sin interacción por mouse, tacto ni teclado. El iframe solo se carga en los dispositivos habilitados. Si no hay URL, se muestran las imágenes y videos publicados. **Próximamente** no muestra ninguno de estos botones.
 
 El sitio del juego debe permitir cargarse en un iframe. El visor bloquea foco y eventos, usa sandbox y restringe permisos (incluidos gamepad y pantalla completa). Muestra el estado inicial que el juego cargue por sí solo: no puede avanzar automáticamente un menú ni controlar partes internas del juego. Es una restricción de interacción del portal, no una protección de la URL original: si el juego es público en otro dominio, seguirá accesible allí. Para restringir también ese acceso hay que configurar el servidor del juego.
 
@@ -58,7 +58,7 @@ Copiá `.env.example` como `.env` y completá las variables. El `.env` está ign
 
 ## Contacto
 
-El formulario valida los campos en el servidor y guarda siempre los mensajes en Supabase. Si `RESEND_API_KEY` está configurada, además envía una notificación a `CONTACT_TO_EMAIL` (por defecto `bzstudios.games@gmail.com`). Para producción, configurá `CONTACT_FROM_EMAIL` con una dirección de un dominio verificado en Resend.
+El formulario valida los campos en el servidor y guarda los mensajes en Supabase con `SUPABASE_SECRET_KEY` (solo servidor). Aplicá `202610210002_contact_server_only.sql` para impedir inserciones directas desde la API pública y mantener obligatorias las validaciones del portal. Si `RESEND_API_KEY` está configurada, además envía una notificación a `CONTACT_TO_EMAIL` (por defecto `bzstudios.games@gmail.com`). Para producción, configurá `CONTACT_FROM_EMAIL` con una dirección de un dominio verificado en Resend.
 
 ## Despliegue
 

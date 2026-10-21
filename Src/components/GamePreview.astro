@@ -1,0 +1,16 @@
+---
+import type { Game } from '../types/game';
+import { getGameAccess } from '../lib/game-access.mjs';
+
+interface Props { game: Game }
+const { game } = Astro.props;
+const { canPreview, previewHref, previewDevices } = getGameAccess(game);
+---
+
+{canPreview && <a
+  class:list={['button', 'button--ghost', 'game-preview-link', {
+    'game-preview-link--desktop': !previewDevices.mobile,
+    'game-preview-link--mobile': !previewDevices.desktop,
+  }]}
+  href={previewHref}
+>Ver vista previa <span aria-hidden="true">→</span></a>}

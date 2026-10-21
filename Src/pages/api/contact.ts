@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createPublicClient } from '../../lib/supabase';
+import { createAdminAuthClient } from '../../lib/account';
 import { CONTACT_LIMITS, parseContactForm } from '../../lib/contact.mjs';
 import { escapeHtml, isSameOriginRequest, readLimitedFormData } from '../../lib/security.mjs';
 
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!contact) return redirect(request, '/contacto/?error=1');
   const { name, email, category, message } = contact;
 
-  const supabase = createPublicClient();
+  const supabase = createAdminAuthClient();
   if (!supabase) return redirect(request, '/contacto/?error=1');
 
   const { error } = await supabase.from('contact_messages').insert({ name, email, category, message });

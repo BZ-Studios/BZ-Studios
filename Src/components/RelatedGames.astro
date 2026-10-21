@@ -1,0 +1,53 @@
+---
+import GameCard from './GameCard.astro';
+import type { Game } from '../types/game';
+interface Props { games: Game[] }
+const { games } = Astro.props;
+---
+
+{games.length > 0 && <section class="section related-games" aria-labelledby="related-games-title">
+  <div class="shell" data-related-games>
+    <header class="related-games__heading"><p class="kicker">Seguí jugando</p><h2 id="related-games-title">Otros mundos</h2></header>
+    <div class="related-games__track" id="related-games-track" data-related-track style={`--related-columns:${Math.min(3, games.length)}`} aria-label="Juegos recomendados">
+      {games.map((game) => <GameCard game={game} />)}
+    </div>
+    {games.length > 1 && <div class="related-games__navigation" data-related-navigation hidden>
+      <button type="button" data-related-previous aria-controls="related-games-track" aria-label="Juego recomendado anterior"><span aria-hidden="true">←</span></button>
+      <span data-related-counter aria-live="polite">1 / {games.length}</span>
+      <button type="button" data-related-next aria-controls="related-games-track" aria-label="Juego recomendado siguiente"><span aria-hidden="true">→</span></button>
+    </div>}
+  </div>
+</section>}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-related-games]').forEach((root) => {
+    const track = root.querySelector<HTMLElement>('[data-related-track]');
+    const cards = Array.from(track?.querySelectorAll<HTMLElement>('.game-card') ?? []);
+    const navigation = root.querySelector<HTMLElement>('[data-related-navigation]');
+    const counter = root.querySelector<HTMLElement>('[data-related-counter]');
+    const mobile = window.matchMedia('(max-width: 600px)');
+    let index = 0;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (!track) return;
+      const left = track.getBoundingClientRect().left;
+      index = cards.reduce((best, card, candidate) => Math.abs(card.getBoundingClientRect().left - left)
+        < Math.abs(cards[best].getBoundingClientRect().left - left) ? candidate : best, 0);
+      if (navigation) navigation.hidden = !mobile.matches || cards.length < 2;
+      if (counter) counter.textContent = `${index + 1} / ${cards.length}`;
+      cards.forEach((card, candidate) => { card.inert = mobile.matches && candidate !== index; });
+    };
+    const move = (step: number) => {
+      if (!track || !cards.length) return;
+      index = (index + step + cards.length) % cards.length;
+      const offset = cards[index].getBoundingClientRect().left - track.getBoundingClientRect().left;
+      track.scrollBy({ left: offset, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    };
+    root.querySelector('[data-related-previous]')?.addEventListener('click', () => move(-1));
+    root.querySelector('[data-related-next]')?.addEventListener('click', () => move(1));
+    track?.addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  });
+</script>

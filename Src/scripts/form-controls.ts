@@ -156,7 +156,7 @@ const resizeTextarea = (textarea: HTMLTextAreaElement) => {
   textarea.setAttribute('data-autosize', '');
   textarea.style.height = 'auto';
   const border = textarea.offsetHeight - textarea.clientHeight;
-  textarea.style.height = `${textarea.scrollHeight + border}px`;
+  textarea.style.height = `${Math.ceil(textarea.scrollHeight + border + 1)}px`;
 };
 const refresh = () => {
   selectRefreshers.forEach(sync => sync());

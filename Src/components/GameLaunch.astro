@@ -8,8 +8,8 @@ interface Props {
 }
 
 const { game, compact = false } = Astro.props;
-const { href, isPreview } = getGameAccess(game);
-const label = isPreview ? 'Ver vista previa' : compact ? 'Jugar' : 'Jugar ahora';
+const { href } = getGameAccess(game);
+const label = compact ? 'Jugar' : 'Jugar ahora';
 ---
 
 {href && (
@@ -17,9 +17,9 @@ const label = isPreview ? 'Ver vista previa' : compact ? 'Jugar' : 'Jugar ahora'
     class:list={['button', 'button--primary', { 'button--small': compact }]}
     data-card-play
     href={href}
-    target={isPreview ? undefined : '_blank'}
-    rel={isPreview ? undefined : 'noreferrer'}
+    target="_blank"
+    rel="noreferrer"
   >
-    {label} <span aria-hidden="true">{isPreview ? '→' : '↗'}</span>
+    {label} <span aria-hidden="true">↗</span>
   </a>
 )}

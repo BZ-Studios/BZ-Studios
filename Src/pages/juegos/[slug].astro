@@ -1,9 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import GameCard from '../../components/GameCard.astro';
+import RelatedGames from '../../components/RelatedGames.astro';
 import GameRating from '../../components/GameRating.astro';
 import GameMediaGallery from '../../components/GameMediaGallery.astro';
 import GameLaunch from '../../components/GameLaunch.astro';
+import GamePreview from '../../components/GamePreview.astro';
+import { recommendGames } from '../../lib/game-recommendations.mjs';
 import { getGameAccess } from '../../lib/game-access.mjs';
 import { siteConfig } from '../../config/site';
 import { getPublicGameBySlug, getPublicGames } from '../../lib/games';
@@ -13,13 +15,13 @@ const game = await getPublicGameBySlug(Astro.params.slug ?? '');
 if (!game) return Astro.redirect('/404/', 302);
 
 const games = await getPublicGames();
-const related = games.filter((item) => item.slug !== game.slug && item.genres.some((genre) => game.genres.includes(genre))).slice(0, 3);
+const related = recommendGames(games, game.slug);
 const { supabase, user } = await getAccount(Astro.request, Astro.cookies);
 const { data: ownRating } = user && supabase ? await supabase.from('game_ratings').select('score').eq('game_id', game.id).eq('user_id', user.id).maybeSingle() : { data: null };
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.url).href;
 const primaryGenre = game.genres[0]?.toLocaleLowerCase('es-AR');
 const genrePhrase = primaryGenre ? ` de ${primaryGenre}` : '';
-const { canPlay: canPlayOnline, isPreview, playUrl } = getGameAccess(game);
+const { canPlay: canPlayOnline, playUrl } = getGameAccess(game);
 const defaultSeoTitle = `${game.name}: videojuego${genrePhrase}${canPlayOnline ? ' online' : ''}`;
 const supportingSeoText = game.shortDescription.trim().length >= 50
   ? game.shortDescription.trim()
@@ -74,9 +76,9 @@ const gameSchema = {
             <p class="lead">{game.description}</p>
             <div class="button-row">
               <GameLaunch game={game} />
+              <GamePreview game={game} />
               {game.trailerUrl && <a class="button button--ghost" href={game.trailerUrl} target="_blank" rel="noreferrer">Ver tráiler <span aria-hidden="true">↗</span></a>}
             </div>
-            {isPreview && <p class="game-preview-note">Mirá cómo va quedando. Este juego está en desarrollo y todavía no se puede jugar desde el portal.</p>}
           </div>
         </div>
       </div>
@@ -88,6 +90,6 @@ const gameSchema = {
     {canPlayOnline && game.controls && game.controls.length > 0 && (
       <section class="section"><div class="shell narrow"><p class="kicker">Controles</p><h2>Listo para jugar</h2><dl class="control-list">{game.controls.map((control) => <><dt>{control.input}</dt><dd>{control.action}</dd></>)}</dl></div></section>
     )}
-    {related.length > 0 && <section class="section"><div class="shell"><p class="kicker">Seguí jugando</p><h2>Otros mundos</h2><div class="game-grid">{related.map((item) => <GameCard game={item} />)}</div></div></section>}
+    <RelatedGames games={related} />
   </article>
 </BaseLayout>

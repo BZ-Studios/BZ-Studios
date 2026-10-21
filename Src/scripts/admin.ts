@@ -1,6 +1,9 @@
 import { getSupabaseBrowserClient } from '../lib/supabase-browser';
 import { normalizeGameGenres } from '../config/gameGenres';
 import { refreshInbox } from './inbox';
+import { getGameUrl, getPreviewDevices } from '../lib/game-access.mjs';
+import { getYouTubeVideoId } from '../lib/youtube.mjs';
+import { GAME_STATUSES, type GameStatus } from '../types/game';
 
 type AdminImage = { id: string; storage_path: string; kind: 'cover' | 'banner' | 'screenshot'; alt_text: string | null; sort_order: number; public_url: string };
 type AdminGame = Record<string, unknown> & { id: string; name: string; slug: string; game_images: AdminImage[] };
@@ -110,6 +113,14 @@ function editGame(game: AdminGame) {
   set('seo_title', game.seo_title); set('seo_description', game.seo_description);
   (form.elements.namedItem('featured') as HTMLInputElement).checked = Boolean(game.featured);
   (form.elements.namedItem('is_visible') as HTMLInputElement).checked = Boolean(game.is_visible);
+  const previewDevices = getPreviewDevices({
+    slug: game.slug,
+    status: game.status as GameStatus,
+    previewDesktop: typeof game.preview_desktop_enabled === 'boolean' ? game.preview_desktop_enabled : undefined,
+    previewMobile: typeof game.preview_mobile_enabled === 'boolean' ? game.preview_mobile_enabled : undefined,
+  });
+  (form.elements.namedItem('preview_desktop_enabled') as HTMLInputElement).checked = previewDevices.desktop;
+  (form.elements.namedItem('preview_mobile_enabled') as HTMLInputElement).checked = previewDevices.mobile;
   if (editorTitle) editorTitle.textContent = `Editar: ${game.name}`;
   renderMedia(game);
   openEditor();
@@ -148,11 +159,19 @@ form?.addEventListener('submit', async (event) => {
     const id = nullable(data.get('id'));
     const genres = data.getAll('genres').map(String).filter(Boolean);
     if (!genres.length) throw new Error('Elegí al menos un género.');
+    const playUrl = nullable(data.get('play_url'));
+    const trailerUrl = nullable(data.get('trailer_url'));
+    const videoUrls = values(data.get('video_urls'));
+    if ([playUrl, trailerUrl].some((url) => url && !getGameUrl(url))) throw new Error('Los enlaces deben ser direcciones HTTP o HTTPS válidas, sin usuario ni contraseña.');
+    if (videoUrls.some((url) => !getYouTubeVideoId(url))) throw new Error('Usá enlaces válidos de YouTube para los videos adicionales.');
+    if (!GAME_STATUSES.includes(String(data.get('status')) as GameStatus)) throw new Error('Elegí un estado válido para el juego.');
     const controls = String(data.get('controls') ?? '').split('\n').map((line) => line.split('|').map((part) => part.trim())).filter((pair) => pair[0] && pair[1]).map(([input, action]) => ({ input, action }));
     const payload = {
       name: String(data.get('name') ?? '').trim(), slug: slugify(String(data.get('slug') ?? '')),
       short_description: String(data.get('short_description') ?? '').trim(), description: String(data.get('description') ?? '').trim(),
-      play_url: nullable(data.get('play_url')), trailer_url: nullable(data.get('trailer_url')), video_urls: values(data.get('video_urls')), status: String(data.get('status')),
+      play_url: playUrl, trailer_url: trailerUrl, video_urls: videoUrls, status: String(data.get('status')),
+      preview_desktop_enabled: data.get('preview_desktop_enabled') === 'on',
+      preview_mobile_enabled: data.get('preview_mobile_enabled') === 'on',
       platforms: values(data.get('platforms')), genres, published_at: nullable(data.get('published_at')),
       featured: data.get('featured') === 'on', is_visible: data.get('is_visible') === 'on',
       seo_title: nullable(data.get('seo_title')), seo_description: nullable(data.get('seo_description')),
@@ -160,7 +179,7 @@ form?.addEventListener('submit', async (event) => {
     };
     const query = id ? supabase.from('games').update(payload).eq('id', id) : supabase.from('games').insert(payload);
     const { data: saved, error } = await query.select('id').single();
-    if (error) throw new Error('No se pudo guardar el juego. Revisá que el nombre y la dirección sean únicos.');
+    if (error) throw new Error(['42703', 'PGRST204'].includes(error.code) ? 'Falta aplicar la migración 202610210001_game_preview_devices.sql en Supabase para guardar las opciones de vista previa.' : 'No se pudo guardar el juego. Revisá que el nombre y la dirección sean únicos.');
     const cover = data.get('cover');
     const screenshots = data.getAll('screenshots').filter((file): file is File => file instanceof File && file.size > 0);
     await uploadImages(saved.id, cover instanceof File && cover.size ? [cover] : [], 'cover', `Portada de ${payload.name}`);
