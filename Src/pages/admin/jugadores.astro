@@ -1,0 +1,96 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminHeader from '../../components/admin/AdminHeader.astro';
+import UfoRunProgress from '../../components/admin/UfoRunProgress.astro';
+import { getAdminSession } from '../../lib/admin';
+import { createAdminAuthClient } from '../../lib/account';
+import { loadGameAccounts } from '../../lib/admin-game-accounts.mjs';
+import { PLAYER_STATUS_LABELS, type AdminRole, type PlayerStatus } from '../../config/bzId';
+
+const session = await getAdminSession(Astro.request, Astro.cookies);
+if (!session.user || !session.isAdmin || !session.supabase) return Astro.redirect('/admin/login/');
+
+const { data: games, error: gamesError } = await session.supabase.from('games').select('id, name, slug').order('name');
+const selectedGame = games?.find((game) => game.id === Astro.url.searchParams.get('juego'));
+const client = createAdminAuthClient();
+const results = selectedGame && client ? await loadGameAccounts(client, {
+  gameId: selectedGame.id,
+  search: Astro.url.searchParams.get('q') ?? '',
+  page: Number(Astro.url.searchParams.get('pagina') ?? 1),
+}) : null;
+type GameAccount = {
+  id: string;
+  player_id: string;
+  platform: string;
+  display_name: string | null;
+  link_status: string;
+  linked_at: string | null;
+  last_verified_at: string | null;
+  players: { id: string; public_id: string; display_name: string; status: PlayerStatus };
+};
+const accounts = (results?.accounts ?? []) as GameAccount[];
+const selectedAccount = accounts.find((account) => account.player_id === Astro.url.searchParams.get('jugador'));
+// New games register their read-only progress view here, not in the dashboard.
+const progressViews = new Map([['ufo-run', UfoRunProgress]]);
+const ProgressView = progressViews.get(selectedGame?.slug ?? '');
+const linkStatuses: Record<string, string> = { pending: 'Pendiente', linked: 'Vinculada', restricted: 'Restringida', revoked: 'Revocada' };
+const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' });
+const pageUrl = (page: number, playerId?: string) => {
+  const params = new URLSearchParams({ juego: selectedGame!.id, pagina: String(page) });
+  if (results?.query) params.set('q', results.query);
+  if (playerId) params.set('jugador', playerId);
+  return `/admin/jugadores/?${params}${playerId ? '#progreso' : '#jugadores'}`;
+};
+---
+
+<AdminLayout title="Jugadores por juego">
+  <AdminHeader email={session.user.email} role={(session.role ?? 'support') as AdminRole} />
+  <main class="admin-main">
+    <div class="admin-shell">
+      <div class="admin-heading">
+        <div><p class="kicker">B&Z ID · Gestión por juego</p><h1>Jugadores</h1><p>Consultá vinculaciones y progreso sin mezclar los datos de distintos juegos.</p></div>
+        <a class="button button--ghost button--small" href="/admin/#juegos">Volver al catálogo</a>
+      </div>
+      <form class="admin-account-filters admin-panel" method="get" action="/admin/jugadores/">
+        <div class="admin-field"><label for="game-select">Juego</label><select id="game-select" name="juego" required><option value="">Elegí un juego</option>{games?.map((game) => <option value={game.id} selected={selectedGame?.id === game.id}>{game.name}</option>)}</select></div>
+        <div class="admin-field"><label for="player-search">Nombre o B&Z ID</label><input id="player-search" type="search" name="q" maxlength="80" value={results?.query ?? ''} placeholder="Ej.: Luis o BZ-…" /></div>
+        <button class="button button--primary button--small" type="submit">Consultar</button>
+        {selectedGame && <a class="button button--ghost button--small" href={`/admin/jugadores/?juego=${selectedGame.id}`}>Limpiar</a>}
+      </form>
+
+      {gamesError ? <p class="admin-message" data-kind="error">No se pudo cargar el catálogo. Intentá nuevamente.</p> : !client ? <p class="admin-message" data-kind="error">Falta configurar SUPABASE_SECRET_KEY en el servidor.</p> : !selectedGame ? <div class="admin-empty admin-panel"><strong>Elegí un juego del catálogo</strong><p>Todos utilizan el mismo panel de vinculaciones B&Z ID. El progreso depende de la integración de cada juego.</p></div> : results?.error ? <p class="admin-message" data-kind="error">No se pudieron cargar las vinculaciones. Revisá que B&Z ID esté configurado e intentá nuevamente.</p> : (
+        <section class="admin-workspace" id="jugadores">
+          <div class="admin-section-heading"><div><p class="kicker">{results?.count ?? 0} vinculaciones · Página {results?.page} de {results?.pages}</p><h2>{selectedGame.name}</h2></div><p>Las sanciones y apelaciones se gestionan en la cuenta central. Una identidad puede tener varias vinculaciones, por plataforma.</p></div>
+          {accounts.length === 0 ? <div class="admin-empty admin-panel"><strong>{results?.query ? 'Sin coincidencias' : 'Sin cuentas vinculadas'}</strong><p>{results?.query ? 'Probá otro nombre o B&Z ID, o limpiá la búsqueda.' : 'Aparecerán cuando el juego complete la vinculación con B&Z ID. Publicar una ficha no activa la integración automáticamente.'}</p></div> : (
+            <div class="admin-linked-accounts">
+              {accounts.map((account) => (
+                <article class="admin-panel admin-linked-account">
+                  <header><div><h3>{account.players.display_name}</h3><p>{account.players.public_id}</p></div><span class:list={['admin-account-state', { 'is-verified': account.players.status === 'active' }]}>{PLAYER_STATUS_LABELS[account.players.status]}</span></header>
+                  <p>{account.platform} · {linkStatuses[account.link_status] ?? 'Sin estado'}{account.display_name && account.display_name !== account.players.display_name && ` · ${account.display_name}`}</p>
+                  <p class="admin-linked-account__date">Vinculada: {account.linked_at ? dateFormatter.format(new Date(account.linked_at)) : 'Pendiente'} · Última verificación: {account.last_verified_at ? dateFormatter.format(new Date(account.last_verified_at)) : 'Sin verificar'}</p>
+                  <div class="admin-game__actions">
+                    <a class="button button--ghost button--small" href={`/admin/?player=${account.player_id}#usuario-${account.player_id}`}>Ver cuenta y moderación</a>
+                    {ProgressView && <a class="button button--ghost button--small" href={pageUrl(results!.page, account.player_id)}>Ver progreso</a>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+          {results && results.pages > 1 && <nav class="admin-pagination" aria-label="Páginas de vinculaciones">
+            {results.page > 1 && <a class="button button--ghost button--small" href={pageUrl(results.page - 1)}>Anterior</a>}
+            <span>Página {results.page} de {results.pages}</span>
+            {results.page < results.pages && <a class="button button--ghost button--small" href={pageUrl(results.page + 1)}>Siguiente</a>}
+          </nav>}
+          {!ProgressView && <p class="admin-form-help">Este juego comparte la gestión de identidad y vinculaciones. Todavía no tiene un visor de progreso específico en este panel.</p>}
+          {selectedAccount && ProgressView && client && <section class="admin-panel admin-progress-panel" id="progreso">
+            <div class="admin-panel__heading"><div><h3>Progreso de {selectedAccount.players.display_name}</h3><span>{selectedAccount.players.public_id} · {selectedGame.name}</span></div><a class="button button--ghost button--small" href={pageUrl(results!.page)}>Cerrar progreso</a></div>
+            <p class="admin-form-help">Solo consulta. Las escrituras sensibles siguen a cargo del servidor oficial del juego.</p>
+            <ProgressView client={client} playerId={selectedAccount.player_id} />
+          </section>}
+        </section>
+      )}
+    </div>
+  </main>
+</AdminLayout>

@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import Inbox from '../../components/admin/Inbox.astro';
+import AdminHeader from '../../components/admin/AdminHeader.astro';
 import { getAdminSession } from '../../lib/admin';
 import { createAdminAuthClient, sameOrigin } from '../../lib/account';
 import { applyModerationAction, deletePlayerAccount, reviewModerationAppeal, revokeModerationAction } from '../../lib/moderation';
@@ -112,27 +113,11 @@ let accountUsers: Array<{
   accountAdminRole: AdminRole | null;
   createdAt: string;
   lastSignIn: string | null;
-  linkedGames: Array<{ id: string; gameName: string; platform: string; displayName: string | null; status: string }>;
+  linkedGames: Array<{ id: string; gameId: string; gameName: string; platform: string; displayName: string | null; status: string }>;
   moderation: Array<{ id: string; action: ModerationActionType; message: string; scope: string; startsAt: string; endsAt: string | null }>;
   appeals: Array<{ id: string; status: string; message: string; decision: string | null; createdAt: string }>;
   ratings: Array<{ gameId: string; score: number; updatedAt: string; game: { name: string; slug: string } | null }>;
 }> = [];
-type UfoRunAdminPlayer = {
-  playerId: string;
-  publicId: string;
-  displayName: string;
-  coins: number;
-  equippedSkin: string;
-  preferredDifficulty: string;
-  soundEnabled: boolean;
-  lastActiveAt: string | null;
-  skins: string[];
-  scores: Array<{ difficulty: string; score: number; source: string }>;
-  achievements: Array<{ code: string; progress: number; unlockedAt: string | null }>;
-  adsRewardedToday: number;
-};
-let ufoRunPlayers: UfoRunAdminPlayer[] = [];
-let ufoRunReady = true;
 
 if (!adminAuth) {
   accountsError = 'Falta configurar SUPABASE_SECRET_KEY para consultar los usuarios desde el servidor.';
@@ -142,7 +127,7 @@ if (!adminAuth) {
     adminAuth.from('game_ratings').select('user_id, game_id, score, updated_at, games(name, slug)').order('updated_at', { ascending: false }),
     adminAuth.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     adminAuth.from('players').select('id, auth_user_id, public_id, status'),
-    adminAuth.from('player_game_accounts').select('id, player_id, platform, display_name, link_status, games(name)').neq('link_status', 'unlinked'),
+    adminAuth.from('player_game_accounts').select('id, player_id, game_id, platform, display_name, link_status, games(name)').neq('link_status', 'unlinked'),
     adminAuth.from('moderation_actions').select('id, player_id, action_type, user_message, scope_type, scope_id, starts_at, ends_at, revoked_at').is('revoked_at', null).neq('action_type', 'restored').or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`).order('created_at', { ascending: false }),
     adminAuth.from('moderation_appeals').select('id, player_id, status, message, decision, created_at').order('created_at', { ascending: false }),
     adminAuth.from('admins').select('user_id, role'),
@@ -172,7 +157,7 @@ if (!adminAuth) {
         accountAdminRole: administratorRoles.get(authUser.id) ?? null,
         createdAt: authUser.created_at,
         lastSignIn: authUser.last_sign_in_at ?? null,
-        linkedGames: links.filter((link) => link.player_id === player?.id).map((link) => ({ id: link.id, gameName: (Array.isArray(link.games) ? link.games[0]?.name : (link.games as { name?: string } | null)?.name) ?? 'Juego', platform: link.platform, displayName: link.display_name, status: link.link_status })),
+        linkedGames: links.filter((link) => link.player_id === player?.id).map((link) => ({ id: link.id, gameId: link.game_id, gameName: (Array.isArray(link.games) ? link.games[0]?.name : (link.games as { name?: string } | null)?.name) ?? 'Juego', platform: link.platform, displayName: link.display_name, status: link.link_status })),
         moderation: moderation.filter((item) => item.player_id === player?.id).map((item) => ({ id: item.id, action: item.action_type as ModerationActionType, message: item.user_message, scope: item.scope_type === 'game' ? (games.find((game) => game.id === item.scope_id)?.name ?? 'Juego específico') : item.scope_type, startsAt: item.starts_at, endsAt: item.ends_at })),
         appeals: appeals.filter((appeal) => appeal.player_id === player?.id).map((appeal) => ({ id: appeal.id, status: appeal.status, message: appeal.message, decision: appeal.decision, createdAt: appeal.created_at })),
         ratings: ratings.filter((rating) => rating.user_id === authUser.id).map((rating) => ({
@@ -186,40 +171,6 @@ if (!adminAuth) {
   }
 }
 
-if (adminAuth) {
-  const today = new Date().toISOString().slice(0, 10);
-  const [ufoProfilesResult, ufoSkinsResult, ufoScoresResult, ufoAchievementsResult, ufoAdsResult] = await Promise.all([
-    adminAuth.from('ufo_run_profiles').select('player_id, coins, equipped_skin, preferred_difficulty, sound_enabled, last_active_at'),
-    adminAuth.from('ufo_run_player_skins').select('player_id, skin_id'),
-    adminAuth.from('ufo_run_scores').select('player_id, difficulty, best_score, score_source'),
-    adminAuth.from('ufo_run_player_achievements').select('player_id, achievement_code, progress, unlocked_at'),
-    adminAuth.from('ufo_run_daily_ad_rewards').select('player_id, ads_rewarded').eq('reward_date', today),
-  ]);
-  ufoRunReady = !ufoProfilesResult.error;
-  if (ufoRunReady) {
-    const ufoSkins = ufoSkinsResult.data ?? [];
-    const ufoScores = ufoScoresResult.data ?? [];
-    const ufoAchievements = ufoAchievementsResult.data ?? [];
-    const ufoAds = ufoAdsResult.data ?? [];
-    ufoRunPlayers = (ufoProfilesResult.data ?? []).map((profile) => {
-      const account = accountUsers.find((candidate) => candidate.playerId === profile.player_id);
-      return {
-        playerId: profile.player_id,
-        publicId: account?.publicId ?? 'B&Z ID',
-        displayName: account?.username ?? 'Jugador',
-        coins: profile.coins,
-        equippedSkin: profile.equipped_skin,
-        preferredDifficulty: profile.preferred_difficulty,
-        soundEnabled: profile.sound_enabled,
-        lastActiveAt: profile.last_active_at,
-        skins: ufoSkins.filter((skin) => skin.player_id === profile.player_id).map((skin) => skin.skin_id),
-        scores: ufoScores.filter((score) => score.player_id === profile.player_id).map((score) => ({ difficulty: score.difficulty, score: score.best_score, source: score.score_source })),
-        achievements: ufoAchievements.filter((achievement) => achievement.player_id === profile.player_id).map((achievement) => ({ code: achievement.achievement_code, progress: achievement.progress, unlockedAt: achievement.unlocked_at })),
-        adsRewardedToday: ufoAds.find((reward) => reward.player_id === profile.player_id)?.ads_rewarded ?? 0,
-      };
-    }).sort((a, b) => Date.parse(b.lastActiveAt ?? '1970-01-01') - Date.parse(a.lastActiveAt ?? '1970-01-01'));
-  }
-}
 const publicMediaUrl = (path: string) => supabase.storage.from('game-media').getPublicUrl(path).data.publicUrl;
 const serializedGames = games.map((game) => ({
   ...game,
@@ -231,19 +182,7 @@ const serializedGames = games.map((game) => ({
 ---
 
 <AdminLayout title="Dashboard">
-  <header class="admin-topbar">
-    <div class="admin-shell admin-topbar__inner">
-      <a class="admin-brand" href="/admin/"><img src="/brand/logo-transparent.png" alt="B&Z Studios" width="1672" height="941" /><span>Administración</span></a>
-      <nav class="admin-nav" aria-label="Secciones del panel">
-        <a href="#juegos">Juegos</a><a href="#equipo">Equipo</a><a href="#usuarios">Usuarios</a><a href="#ufo-run">UFO RUN</a><a href="#mensajes">Mensajes</a>
-      </nav>
-      <div class="admin-user">
-        <span>{session.user.email}<small>{ADMIN_ROLE_LABELS[adminRole]}</small></span>
-        <a class="button button--ghost button--small" href="/" target="_blank">Ver sitio ↗</a>
-        <button class="button button--ghost button--small" type="button" data-logout-open>Salir</button>
-      </div>
-    </div>
-  </header>
+  <AdminHeader email={session.user.email} role={adminRole} />
 
   <main class="admin-main">
     <div class="admin-shell">
@@ -256,8 +195,7 @@ const serializedGames = games.map((game) => ({
         <article><span>Juegos</span><strong>{games.length}</strong><small>{games.filter((game) => game.is_visible).length} publicados</small></article>
         <article><span>Equipo</span><strong>{members.length}</strong><small>perfiles configurables</small></article>
         <article><span>Mensajes nuevos</span><strong data-unread-count>{unreadMessages}</strong><small data-message-total>{contactMessages.length} en la bandeja</small></article>
-        <article><span>Usuarios</span><strong>{accountUsers.length}</strong><small>{accountUsers.reduce((total, account) => total + account.ratings.length, 0)} calificaciones</small></article>
-        <article><span>UFO RUN</span><strong>{ufoRunPlayers.length}</strong><small>jugadores sincronizados</small></article>
+        <article><span>B&Z ID</span><strong>{accountUsers.length}</strong><small>cuentas del ecosistema</small></article>
       </section>
 
       {gamesResult.error && <p class="admin-message" data-kind="error">No se pudo cargar el catálogo. Intentá actualizar el panel.</p>}
@@ -285,6 +223,7 @@ const serializedGames = games.map((game) => ({
                   <div class="admin-game__meta"><span>{game.status}</span><span>{game.featured ? '★ Destacado' : 'Catálogo'}</span></div>
                   <div class="admin-game__actions">
                     <button class="button button--ghost button--small" type="button" data-edit-game={JSON.stringify(game)}>Editar</button>
+                    <a class="button button--ghost button--small" href={`/admin/jugadores/?juego=${game.id}`}>Jugadores B&Z ID</a>
                     <button class="button button--ghost button--small" type="button" data-toggle-game={game.id} data-visible={String(game.is_visible)}>{game.is_visible ? 'Ocultar' : 'Publicar'}</button>
                     <button class="button button--danger button--small" type="button" data-delete-game={game.id} data-game-name={game.name}>Eliminar</button>
                   </div>
@@ -378,11 +317,16 @@ const serializedGames = games.map((game) => ({
       </section>
 
       <section class="admin-workspace" id="usuarios">
-        <div class="admin-section-heading"><div><p class="kicker">Identidad central</p><h2>Usuarios, moderación y apelaciones</h2></div><p>Consultá cada B&Z ID, sus juegos vinculados y calificaciones. Las medidas se registran con motivo, alcance, duración y responsable.</p></div>
+        <div class="admin-section-heading"><div><p class="kicker">Identidad central</p><h2>B&Z ID</h2></div><p>Cuentas, moderación y apelaciones de todo el ecosistema. Para consultar progreso, abrí “Jugadores B&Z ID” dentro de cada juego del catálogo.</p></div>
+        {!accountsError && accountUsers.length > 0 && <div class="admin-account-filters admin-panel" data-account-filters>
+          <div class="admin-field"><label for="account-search">Buscar cuenta</label><input id="account-search" type="search" maxlength="254" placeholder="Nombre, correo o B&Z ID" data-account-search /></div>
+          <div class="admin-field"><label for="account-game">Juego vinculado</label><select id="account-game" data-account-game><option value="">Todos los juegos</option>{games.map((game) => <option value={game.id}>{game.name}</option>)}</select></div>
+          <p class="admin-filter-count" data-account-count role="status">{accountUsers.length} cuentas</p>
+        </div>}
         {!accountsError && accountUsers.length === 0 && <div class="admin-empty admin-panel"><strong>Sin usuarios registrados</strong><p>Las nuevas cuentas aparecerán en esta sección.</p></div>}
         {!accountsError && accountUsers.length > 0 && <div class="admin-account-list">
           {accountUsers.map((account) => (
-            <details class="admin-account-card">
+            <details class="admin-account-card" id={account.playerId ? `usuario-${account.playerId}` : `usuario-${account.id}`} open={Boolean(account.playerId && Astro.url.searchParams.get('player') === account.playerId)} data-account-card data-account-search-text={`${account.username} ${account.email} ${account.publicId ?? ''}`} data-account-games={account.linkedGames.map((link) => link.gameId).join(' ')}>
               <summary>
                 <span class="admin-account-avatar" aria-hidden="true">{account.username.slice(0, 2).toUpperCase()}</span>
                 <span class="admin-account-identity"><strong>{account.username}</strong>{account.accountAdminRole && <em class="admin-role-badge">Admin · {ADMIN_ROLE_LABELS[account.accountAdminRole]}</em>}<small>{account.publicId ?? 'Sin B&Z ID'} · {account.email}</small></span>
@@ -393,7 +337,7 @@ const serializedGames = games.map((game) => ({
               <div class="admin-account-content">
                 <div class="admin-account-dates"><span>Registro: <strong>{accountDateFormatter.format(new Date(account.createdAt))}</strong></span><span>Último acceso: <strong>{account.lastSignIn ? accountDateFormatter.format(new Date(account.lastSignIn)) : 'Sin ingresos'}</strong></span></div>
                 <div class="admin-identity-grid">
-                  <section><h4>Juegos vinculados</h4>{account.linkedGames.length ? account.linkedGames.map((link) => <p><strong>{link.gameName}</strong> · {link.displayName || link.platform} · {link.status}</p>) : <p>Sin vinculaciones.</p>}</section>
+                  <section><h4>Juegos vinculados</h4>{account.linkedGames.length ? account.linkedGames.map((link) => <p><a href={`/admin/jugadores/?juego=${link.gameId}`}><strong>{link.gameName}</strong></a> · {link.displayName || link.platform} · {link.status}</p>) : <p>Sin vinculaciones.</p>}</section>
                   <section><h4>Medidas activas</h4>{account.moderation.length ? account.moderation.map((measure) => <article class="admin-active-measure"><p><strong>{MODERATION_ACTION_LABELS[measure.action]}</strong> · {measure.scope}<br /><small>{measure.message}</small><small>{measure.endsAt ? `Finaliza: ${accountDateFormatter.format(new Date(measure.endsAt))}` : 'Sin fecha de finalización'}</small></p><form method="post" data-confirm-message="¿Retirar esta medida y recalcular el acceso de la cuenta?"><input type="hidden" name="action" value="revoke-moderation" /><input type="hidden" name="moderation_action_id" value={measure.id} /><button class="button button--ghost button--small" type="submit">Retirar medida</button></form></article>) : <p>Sin medidas activas.</p>}</section>
                   <section class="admin-appeals"><h4>Apelaciones</h4>{account.appeals.length ? account.appeals.map((appeal) => <article><p><strong>{appeal.status.replace('_', ' ')}</strong> · {accountDateFormatter.format(new Date(appeal.createdAt))}<br /><small>{appeal.message}</small>{appeal.decision && <small>Resolución: {appeal.decision}</small>}</p>{['submitted', 'under_review'].includes(appeal.status) && <form method="post"><input type="hidden" name="action" value="review-appeal" /><input type="hidden" name="appeal_id" value={appeal.id} /><select name="appeal_status" aria-label="Resolución" required><option value="accepted">Aceptar</option><option value="partially_accepted">Aceptar parcialmente</option><option value="rejected">Rechazar</option></select><textarea name="decision" minlength="10" maxlength="2000" rows="3" placeholder="Explicación visible para el jugador" required></textarea><button class="button button--ghost button--small" type="submit">Resolver</button></form>}</article>) : <p>Sin apelaciones.</p>}</section>
                 </div>
@@ -423,31 +367,7 @@ const serializedGames = games.map((game) => ({
             </details>
           ))}
         </div>}
-      </section>
-
-      <section class="admin-workspace" id="ufo-run">
-        <div class="admin-section-heading"><div><p class="kicker">Juego conectado</p><h2>UFO RUN</h2></div><p>Consultá progreso sincronizado, récords, logros, skins y recompensas diarias. Las operaciones sensibles solo se aceptan desde el servidor oficial del juego.</p></div>
-        {!ufoRunReady && <div class="admin-empty admin-panel"><strong>Integración pendiente</strong><p>Aplicá la migración <code>202609290001_ufo_run_identity.sql</code> en Supabase para activar esta sección.</p></div>}
-        {ufoRunReady && ufoRunPlayers.length === 0 && <div class="admin-empty admin-panel"><strong>Sin jugadores sincronizados</strong><p>Los perfiles aparecerán después del primer acceso de cada jugador desde UFO RUN.</p></div>}
-        {ufoRunReady && ufoRunPlayers.length > 0 && <div class="admin-ufo-grid">
-          {ufoRunPlayers.map((player) => (
-            <article class="admin-panel admin-ufo-player">
-              <header><div><p class="kicker">{player.publicId}</p><h3>{player.displayName}</h3></div><span class="admin-account-state is-verified">{player.preferredDifficulty}</span></header>
-              <dl>
-                <div><dt>Monedas</dt><dd>{player.coins.toLocaleString('es-AR')}</dd></div>
-                <div><dt>Skin equipada</dt><dd>{player.equippedSkin}</dd></div>
-                <div><dt>Skins adquiridas</dt><dd>{player.skins.length}</dd></div>
-                <div><dt>Anuncios hoy</dt><dd>{player.adsRewardedToday}/10</dd></div>
-                <div><dt>Sonido</dt><dd>{player.soundEnabled ? 'Activado' : 'Desactivado'}</dd></div>
-                <div><dt>Última actividad</dt><dd>{player.lastActiveAt ? accountDateFormatter.format(new Date(player.lastActiveAt)) : 'Sin actividad'}</dd></div>
-              </dl>
-              <div class="admin-ufo-details">
-                <section><h4>Mejores puntuaciones</h4>{player.scores.length ? player.scores.map((score) => <p><strong>{score.difficulty}</strong><span>{score.score.toLocaleString('es-AR')} · {score.source === 'verified' ? 'verificada' : 'importada'}</span></p>) : <p>Sin puntuaciones.</p>}</section>
-                <section><h4>Logros</h4><p><strong>{player.achievements.filter((achievement) => achievement.unlockedAt).length}</strong><span>desbloqueados de {player.achievements.length} con progreso</span></p></section>
-              </div>
-            </article>
-          ))}
-        </div>}
+        <div class="admin-empty admin-panel" data-accounts-empty hidden><strong>Sin coincidencias</strong><p>Cambiá la búsqueda o elegí otro juego.</p></div>
       </section>
 
       <section class="admin-workspace" id="mensajes">
@@ -456,16 +376,6 @@ const serializedGames = games.map((game) => ({
       </section>
     </div>
   </main>
-  <dialog class="admin-dialog" data-logout-dialog aria-labelledby="logout-title">
-    <div class="admin-dialog__icon" aria-hidden="true">↪</div>
-    <p class="kicker">Panel privado</p>
-    <h2 id="logout-title">¿Cerrar sesión?</h2>
-    <p>Vas a salir del dashboard de administración. Podrás volver a ingresar con tu cuenta autorizada.</p>
-    <div class="admin-dialog__actions">
-      <button class="button button--ghost" type="button" data-logout-cancel>Cancelar</button>
-      <form method="post" action="/admin/logout/"><button class="button button--danger" type="submit">Sí, salir</button></form>
-    </div>
-  </dialog>
   <script is:inline type="application/json" id="admin-games" set:html={serializeInlineJson(serializedGames)} />
   <script>import '../../scripts/admin';</script>
 </AdminLayout>

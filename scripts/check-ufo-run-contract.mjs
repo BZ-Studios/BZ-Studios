@@ -24,7 +24,8 @@ const required = {
     "operation === 'profile'", "operation === 'ranking'", "operation === 'scores'",
     "operation === 'ad-rewards'", "operation === 'achievements'", "operation === 'local-import'",
   ],
-  'Src/pages/admin/index.astro': ['id="ufo-run"', 'ufo_run_profiles', 'adsRewardedToday'],
+  'Src/pages/admin/jugadores.astro': ['getAdminSession', 'loadGameAccounts', 'selectedAccount', 'UfoRunProgress'],
+  'Src/components/admin/UfoRunProgress.astro': ['ufo_run_profiles', ".eq('player_id', playerId)", 'ads_rewarded'],
   'docs/ufo-run-integration.md': ['Idempotency-Key', 'X-UFO-RUN-Server-Key', 'local-import', 'Upstash', 'OAuth 2.1/OIDC'],
   'supabase/tests/ufo_run_smoke.sql': ['public.ufo_run_top_ranking', 'public_table_writes'],
 };

@@ -12,7 +12,7 @@
 .admin-brand img { width: 6rem; height: 2.8rem; object-fit: contain; }
 .admin-brand span { color: var(--muted); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; }
 .admin-nav { display: flex; align-items: center; justify-content: center; gap: .35rem; padding: .3rem; border: 1px solid rgba(255,255,255,.08); border-radius: 999px; background: rgba(255,255,255,.025); }
-.admin-nav a { padding: .45rem .85rem; border-radius: 999px; color: #bbb9c5; text-decoration: none; font-size: .78rem; font-weight: 800; }
+.admin-nav a { padding: .45rem .85rem; border-radius: 999px; color: #bbb9c5; text-decoration: none; font-size: .78rem; font-weight: 800; white-space: nowrap; }
 .admin-nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
 .admin-user { display: flex; align-items: center; gap: .65rem; color: var(--muted); font-size: .78rem; }
 .admin-user form { display: contents; }
@@ -139,19 +139,27 @@
 .admin-identity-grid p { margin: 0 0 .55rem; color: #aaa7b3; font-size: .75rem; overflow-wrap: anywhere; }
 .admin-identity-grid p:last-child { margin-bottom: 0; }
 .admin-identity-grid small { display: block; color: #85818d; }
-.admin-ufo-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(290px,1fr)); gap: 1rem; }
-.admin-ufo-player { padding: 1rem; }
-.admin-ufo-player header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-.admin-ufo-player header h3 { margin: .15rem 0 0; }
-.admin-ufo-player dl { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55rem; margin: 0; }
-.admin-ufo-player dl div { padding: .65rem; border: 1px solid rgba(255,255,255,.07); border-radius: 7px; background: rgba(0,0,0,.18); }
-.admin-ufo-player dt { color: #87838f; font-size: .62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.admin-ufo-player dd { margin: .2rem 0 0; color: #f6f3fa; font-weight: 800; overflow-wrap: anywhere; }
-.admin-ufo-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .6rem; margin-top: .7rem; }
-.admin-ufo-details section { padding: .7rem; border-top: 1px solid var(--line); }
-.admin-ufo-details h4 { margin: 0 0 .45rem; font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; }
-.admin-ufo-details p { display: flex; justify-content: space-between; gap: .75rem; margin: .25rem 0; color: #aaa7b3; font-size: .72rem; }
-.admin-ufo-details span { text-align: right; }
+.admin-account-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .85rem; margin-bottom: 1.25rem; }
+.admin-account-filters .admin-field { flex: 1 1 15rem; min-width: 0; }
+.admin-filter-count { margin: 0; padding-block: .7rem; color: var(--muted); font-size: .8rem; }
+.admin-account-card:target { border-color: var(--yellow); scroll-margin-top: 7rem; }
+.admin-linked-accounts { display: grid; gap: .85rem; }
+.admin-linked-account { min-width: 0; }
+.admin-linked-account header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.admin-linked-account h3 { font-family: var(--font-body); font-size: 1.15rem; letter-spacing: 0; text-transform: none; overflow-wrap: anywhere; }
+.admin-linked-account p { margin: .4rem 0 .8rem; overflow-wrap: anywhere; }
+.admin-linked-account header p,.admin-linked-account__date { color: var(--muted); font-size: .8rem; }
+.admin-pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+.admin-pagination span { color: var(--muted); font-size: .85rem; }
+.admin-progress-panel { margin-top: 1.5rem; scroll-margin-top: 7rem; }
+.admin-game-progress dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap: .55rem; margin: 0; }
+.admin-game-progress dl div { padding: .85rem; border: 1px solid rgba(255,255,255,.07); border-radius: 7px; background: rgba(0,0,0,.18); }
+.admin-game-progress dt { color: #aaa7b3; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.admin-game-progress dd { margin: .2rem 0 0; color: #f6f3fa; font-weight: 800; overflow-wrap: anywhere; }
+.admin-game-progress__details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .6rem; margin-top: .7rem; }
+.admin-game-progress__details section { padding: .7rem; border-top: 1px solid var(--line); }
+.admin-game-progress__details h4 { margin: 0 0 .45rem; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; }
+.admin-game-progress__details p { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; margin: .25rem 0; color: #aaa7b3; font-size: .85rem; }
 .admin-appeals article + article { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--line); }
 .admin-appeals form { display: grid; gap: .45rem; margin-top: .55rem; }
 .admin-appeals select,.admin-appeals textarea { width: 100%; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 6px; color: #fff; background: #09080e; font: inherit; }
@@ -217,7 +225,7 @@
   .admin-section-heading { grid-template-columns: 1fr; gap: .5rem; }
   .admin-team-grid { gap: .9rem; }
   .admin-identity-grid { grid-template-columns: 1fr; }
-  .admin-ufo-details { grid-template-columns: 1fr; }
+  .admin-game-progress__details { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .admin-topbar { position: static; }
@@ -250,7 +258,9 @@
   .admin-editor-meta > span { max-width: 14rem; }
   .admin-game__header { flex-direction: column; }
   .admin-game__actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .admin-game__actions .button:last-child { grid-column: 1 / -1; }
+  .admin-account-filters { align-items: stretch; flex-direction: column; }
+  .admin-account-filters .admin-field { flex: auto; }
+  .admin-linked-account .admin-game__actions { grid-template-columns: 1fr; }
   .admin-form-section { padding: .85rem; }
   .admin-actions { position: static; width: 100%; display: grid; grid-template-columns: 1fr; }
   .admin-actions .button { width: 100%; }

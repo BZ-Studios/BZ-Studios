@@ -30,6 +30,25 @@ El paso futuro hacia un SSO completo debe utilizar OAuth 2.1/OIDC con Authorizat
 
 Una suspensión o bloqueo se asocia a `players`, no a una vinculación. Desvincular un juego no evade una medida vigente.
 
+## Organización del panel multi-juego
+
+- El dashboard mantiene cuatro áreas: **Juegos**, **Equipo**, **B&Z ID** y **Mensajes**; no agrega una pestaña por juego.
+- **B&Z ID** centraliza cuentas, búsqueda por nombre/correo/ID, filtro de juego, sanciones y apelaciones. Cada cuenta conserva enlaces a sus vinculaciones.
+- **Juegos → Jugadores B&Z ID** abre `/admin/jugadores/?juego=<uuid>`. El mismo visor sirve para cualquier juego del catálogo, incluso oculto, con búsqueda por nombre/ID y páginas de 20 vinculaciones.
+- El catálogo por sí solo no demuestra que exista integración: las vinculaciones aparecen únicamente cuando el servidor del juego las registra. No se generan ni se migran datos por abrir el panel.
+- El progreso propio de un juego se consulta bajo demanda desde una cuenta vinculada. El visor de UFO RUN conserva monedas, skins, récords, logros y recompensas, sin consultar sus tablas al abrir el dashboard. Los nuevos juegos pueden añadir su visor, sin duplicar identidad ni moderación.
+- Las rutas verifican la sesión y el rol administrativo antes de usar el cliente privado. El visor de progreso solo acepta jugadores presentes en la página del juego seleccionado; no permite editar recompensas o monedas.
+
+No requiere una migración nueva: utiliza `games`, `players` y `player_game_accounts` existentes.
+
+### Prueba rápida
+
+1. Dashboard: comprobar que no hay una sección independiente de UFO RUN.
+2. Juegos → Jugadores B&Z ID: alternar juegos; verificar vacíos, buscar un ID y recorrer páginas si hay más de 20 vinculaciones.
+3. UFO RUN → una cuenta → Ver progreso: consultar y cerrar; Ver cuenta y moderación debe abrir la identidad correcta.
+4. B&Z ID: buscar por correo/nombre e intercambiar el filtro de juego; comprobar que las sanciones y apelaciones siguen en la misma cuenta.
+5. En celular: filtros, acciones y paginación sin desbordes. Sin sesión administrativa, `/admin/jugadores/` debe redirigir al acceso.
+
 ## Roles administrativos
 
 | Rol | Capacidad principal |

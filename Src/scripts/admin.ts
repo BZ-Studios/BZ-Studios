@@ -218,14 +218,27 @@ nameInput?.addEventListener('input', () => {
   if (!id && slug) slug.value = slugify((form.elements.namedItem('name') as HTMLInputElement).value);
 });
 
-const logoutDialog = document.querySelector<HTMLDialogElement>('[data-logout-dialog]');
-const logoutOpen = document.querySelector<HTMLButtonElement>('[data-logout-open]');
-const logoutCancel = document.querySelector<HTMLButtonElement>('[data-logout-cancel]');
-logoutOpen?.addEventListener('click', () => logoutDialog?.showModal());
-logoutCancel?.addEventListener('click', () => logoutDialog?.close());
-logoutDialog?.addEventListener('click', (event) => {
-  if (event.target === logoutDialog) logoutDialog.close();
-});
+const accountSearch = document.querySelector<HTMLInputElement>('[data-account-search]');
+const accountGame = document.querySelector<HTMLSelectElement>('[data-account-game]');
+const accountCards = Array.from(document.querySelectorAll<HTMLDetailsElement>('[data-account-card]'));
+const normalizeAccountSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+function filterAccounts() {
+  const query = normalizeAccountSearch(accountSearch?.value ?? '');
+  const gameId = accountGame?.value ?? '';
+  let count = 0;
+  accountCards.forEach((card) => {
+    card.hidden = !normalizeAccountSearch(card.dataset.accountSearchText ?? '').includes(query)
+      || Boolean(gameId && !card.dataset.accountGames?.split(' ').includes(gameId));
+    if (!card.hidden) count++;
+  });
+  const counter = document.querySelector('[data-account-count]');
+  if (counter) counter.textContent = `${count} ${count === 1 ? 'cuenta' : 'cuentas'}`;
+  const empty = document.querySelector<HTMLElement>('[data-accounts-empty]');
+  if (empty) empty.hidden = count > 0;
+}
+accountSearch?.addEventListener('input', filterAccounts);
+accountGame?.addEventListener('change', filterAccounts);
+if (accountCards.length) filterAccounts();
 
 function instagramUrl(value: FormDataEntryValue | null) {
   const raw = String(value ?? '').trim();

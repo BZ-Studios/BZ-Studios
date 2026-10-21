@@ -1,0 +1,40 @@
+---
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+interface Props {
+  client: SupabaseClient;
+  playerId: string;
+}
+const { client, playerId } = Astro.props;
+// Rendered only after the admin route verifies membership in the selected game.
+const today = new Date().toISOString().slice(0, 10);
+const [profileResult, skinsResult, scoresResult, achievementsResult, adsResult] = await Promise.all([
+  client.from('ufo_run_profiles').select('coins, equipped_skin, preferred_difficulty, sound_enabled, last_active_at').eq('player_id', playerId).maybeSingle(),
+  client.from('ufo_run_player_skins').select('skin_id').eq('player_id', playerId),
+  client.from('ufo_run_scores').select('difficulty, best_score, score_source').eq('player_id', playerId),
+  client.from('ufo_run_player_achievements').select('achievement_code, progress, unlocked_at').eq('player_id', playerId),
+  client.from('ufo_run_daily_ad_rewards').select('ads_rewarded').eq('player_id', playerId).eq('reward_date', today).maybeSingle(),
+]);
+const error = profileResult.error ?? skinsResult.error ?? scoresResult.error ?? achievementsResult.error ?? adsResult.error;
+const profile = profileResult.data;
+const achievements = achievementsResult.data ?? [];
+const dateFormatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' });
+---
+
+{error ? <p class="admin-message" data-kind="error">No se pudo consultar el progreso. Revisá la integración de este juego e intentá nuevamente.</p> : profile ? (
+  <div class="admin-game-progress">
+    <dl>
+      <div><dt>Monedas</dt><dd>{profile.coins.toLocaleString('es-AR')}</dd></div>
+      <div><dt>Skin equipada</dt><dd>{profile.equipped_skin}</dd></div>
+      <div><dt>Skins adquiridas</dt><dd>{skinsResult.data?.length ?? 0}</dd></div>
+      <div><dt>Anuncios hoy (UTC)</dt><dd>{adsResult.data?.ads_rewarded ?? 0}/10</dd></div>
+      <div><dt>Dificultad preferida</dt><dd>{profile.preferred_difficulty}</dd></div>
+      <div><dt>Sonido</dt><dd>{profile.sound_enabled ? 'Activado' : 'Desactivado'}</dd></div>
+      <div><dt>Última actividad</dt><dd>{profile.last_active_at ? dateFormatter.format(new Date(profile.last_active_at)) : 'Sin actividad'}</dd></div>
+    </dl>
+    <div class="admin-game-progress__details">
+      <section><h4>Mejores puntuaciones</h4>{scoresResult.data?.length ? scoresResult.data.map((score) => <p><strong>{score.difficulty}</strong><span>{score.best_score.toLocaleString('es-AR')} · {score.score_source === 'verified' ? 'verificada' : 'importada'}</span></p>) : <p>Sin puntuaciones.</p>}</section>
+      <section><h4>Logros</h4><p>{achievements.filter((achievement) => achievement.unlocked_at).length} desbloqueados de {achievements.length} con progreso.</p></section>
+    </div>
+  </div>
+) : <p class="admin-account-empty">Esta cuenta todavía no tiene progreso sincronizado en el juego.</p>}
