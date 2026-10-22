@@ -3,6 +3,7 @@ import { games as fallbackGames } from '../data/games';
 import { normalizeGameGenres } from '../config/gameGenres';
 import { createPublicClient } from './supabase';
 import { getGameUrl } from './game-access.mjs';
+import { loadPublicGameRows } from './game-catalog-query.mjs';
 
 interface GameImageRow {
   id: string;
@@ -19,6 +20,7 @@ interface GameRow {
   short_description: string;
   description: string;
   play_url: string | null;
+  play_enabled?: boolean;
   preview_desktop_enabled?: boolean;
   preview_mobile_enabled?: boolean;
   trailer_url: string | null;
@@ -63,6 +65,7 @@ function mapGame(row: GameRow): Game {
     genres: normalizeGameGenres(row.genres),
     status: row.status,
     playUrl: getGameUrl(row.play_url ?? undefined),
+    playEnabled: row.play_enabled,
     previewDesktop: row.preview_desktop_enabled,
     previewMobile: row.preview_mobile_enabled,
     controls: row.controls ?? [],
@@ -83,52 +86,11 @@ async function addRatings(games: Game[], client: NonNullable<ReturnType<typeof c
   });
 }
 
-const gameSelect = `
-  id, slug, name, short_description, description, play_url, trailer_url, video_urls,
-  status, platforms, genres, published_at, featured, is_visible,
-  preview_desktop_enabled, preview_mobile_enabled,
-  seo_title, seo_description, features, controls,
-  game_images ( id, storage_path, kind, alt_text, sort_order )
-`;
-
-const withoutPreviewSelect = gameSelect.replace('  preview_desktop_enabled, preview_mobile_enabled,\n', '');
-const legacyGameSelect = withoutPreviewSelect.replace(', video_urls', '');
-
 export async function getPublicGames(): Promise<Game[]> {
   const client = createPublicClient();
   if (!client) return fallbackGames;
 
-  const primaryResult = await client
-    .from('games')
-    .select(gameSelect)
-    .eq('is_visible', true)
-    .order('featured', { ascending: false })
-    .order('published_at', { ascending: false, nullsFirst: false });
-  let data: unknown = primaryResult.data;
-  let error = primaryResult.error;
-
-  // Mantiene el catálogo disponible durante el breve intervalo entre el deploy
-  // y la ejecución manual de la migración que agrega video_urls.
-  if (error?.code === '42703' || error?.code === 'PGRST204') {
-    const withoutPreviewResult = await client
-      .from('games')
-      .select(withoutPreviewSelect)
-      .eq('is_visible', true)
-      .order('featured', { ascending: false })
-      .order('published_at', { ascending: false, nullsFirst: false });
-    data = withoutPreviewResult.data;
-    error = withoutPreviewResult.error;
-  }
-  if (error?.code === '42703' || error?.code === 'PGRST204') {
-    const legacyResult = await client
-      .from('games')
-      .select(legacyGameSelect)
-      .eq('is_visible', true)
-      .order('featured', { ascending: false })
-      .order('published_at', { ascending: false, nullsFirst: false });
-    data = legacyResult.data;
-    error = legacyResult.error;
-  }
+  const { data, error } = await loadPublicGameRows(client);
 
   if (error || !data) return fallbackGames;
   return addRatings((data as unknown as GameRow[]).map(mapGame), client);

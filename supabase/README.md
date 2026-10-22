@@ -14,6 +14,10 @@ Para preparar UFO RUN, ejecutá finalmente `migrations/202609290001_ufo_run_iden
 
 Para habilitar varios videos de YouTube por juego, ejecutá `migrations/202610050001_game_videos.sql`. Conserva el tráiler actual y agrega el Short de Monkey Climb Remastered como video adicional en su galería.
 
+Para controlar el botón **Jugar** por juego, ejecutá `migrations/202610220001_game_play_enabled.sql` en este mismo proyecto de Supabase. Conserva los botones actuales habilitados. Después abrí **Admin → Juegos → Editar → Habilitar botón “Jugar”**, marcá o desmarcá y guardá. Desactivado muestra **Próximamente**, sin enlace, en las tarjetas, la ficha y el acceso del perfil; no modifica la URL, el estado ni las opciones de vista previa. Sin una URL válida o con estado **Próximamente**, tampoco se habilita aunque la casilla esté marcada.
+
+Prueba rápida: desactivar y guardar → recargar catálogo y ficha → comprobar **Próximamente** no interactivo → volver a activar y guardar → comprobar que abre la URL original. Verificar también celular y que la vista previa conserve su configuración. El control afecta los enlaces del portal, no bloquea un juego alojado en otro dominio.
+
 En **Authentication > URL Configuration** agregá `https://bzstudios.com.ar/**` a las URLs de redirección. Conservá activada la confirmación de correo. Supabase aplica límites de frecuencia y el formulario agrega un campo trampa contra bots; si más adelante se habilita CAPTCHA en Supabase, primero deberá integrarse su widget y enviar el token desde ambos formularios.
 
 En Vercel agregá `SUPABASE_SECRET_KEY` como variable privada para consultar usuarios y calificaciones en el dashboard y permitir la eliminación definitiva de cuentas. No uses esa clave con prefijo `PUBLIC_` ni la expongas en el navegador.

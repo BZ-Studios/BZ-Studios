@@ -14,7 +14,7 @@ export function getGameUrl(value) {
 /** @param {import('../types/game').Game} game */
 export function getGameAccess(game) {
   const playUrl = getGameUrl(game.playUrl);
-  const canPlay = Boolean(playUrl && ['Disponible', 'Demo', 'En desarrollo'].includes(game.status));
+  const canPlay = Boolean(game.playEnabled !== false && playUrl && ['Disponible', 'Demo', 'En desarrollo'].includes(game.status));
   const previewDevices = getPreviewDevices(game);
   const canPreview = game.status !== 'Próximamente' && (previewDevices.desktop || previewDevices.mobile);
   return {

@@ -113,6 +113,7 @@ function editGame(game: AdminGame) {
   set('seo_title', game.seo_title); set('seo_description', game.seo_description);
   (form.elements.namedItem('featured') as HTMLInputElement).checked = Boolean(game.featured);
   (form.elements.namedItem('is_visible') as HTMLInputElement).checked = Boolean(game.is_visible);
+  (form.elements.namedItem('play_enabled') as HTMLInputElement).checked = game.play_enabled !== false;
   const previewDevices = getPreviewDevices({
     slug: game.slug,
     status: game.status as GameStatus,
@@ -170,6 +171,7 @@ form?.addEventListener('submit', async (event) => {
       name: String(data.get('name') ?? '').trim(), slug: slugify(String(data.get('slug') ?? '')),
       short_description: String(data.get('short_description') ?? '').trim(), description: String(data.get('description') ?? '').trim(),
       play_url: playUrl, trailer_url: trailerUrl, video_urls: videoUrls, status: String(data.get('status')),
+      play_enabled: data.get('play_enabled') === 'on',
       preview_desktop_enabled: data.get('preview_desktop_enabled') === 'on',
       preview_mobile_enabled: data.get('preview_mobile_enabled') === 'on',
       platforms: values(data.get('platforms')), genres, published_at: nullable(data.get('published_at')),
@@ -179,7 +181,14 @@ form?.addEventListener('submit', async (event) => {
     };
     const query = id ? supabase.from('games').update(payload).eq('id', id) : supabase.from('games').insert(payload);
     const { data: saved, error } = await query.select('id').single();
-    if (error) throw new Error(['42703', 'PGRST204'].includes(error.code) ? 'Falta aplicar la migración 202610210001_game_preview_devices.sql en Supabase para guardar las opciones de vista previa.' : 'No se pudo guardar el juego. Revisá que el nombre y la dirección sean únicos.');
+    if (error) {
+      if (['42703', 'PGRST204'].includes(error.code)) {
+        throw new Error(error.message.includes('play_enabled')
+          ? 'Falta aplicar 202610220001_game_play_enabled.sql en Supabase para habilitar o deshabilitar Jugar.'
+          : 'Falta aplicar las migraciones del catálogo en Supabase (videos y vista previa). Revisá supabase/README.md.');
+      }
+      throw new Error('No se pudo guardar el juego. Revisá que el nombre y la dirección sean únicos.');
+    }
     const cover = data.get('cover');
     const screenshots = data.getAll('screenshots').filter((file): file is File => file instanceof File && file.size > 0);
     await uploadImages(saved.id, cover instanceof File && cover.size ? [cover] : [], 'cover', `Portada de ${payload.name}`);

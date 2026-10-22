@@ -12,7 +12,7 @@ const { href } = getGameAccess(game);
 const label = compact ? 'Jugar' : 'Jugar ahora';
 ---
 
-{href && (
+{href ? (
   <a
     class:list={['button', 'button--primary', { 'button--small': compact }]}
     data-card-play
@@ -22,4 +22,11 @@ const label = compact ? 'Jugar' : 'Jugar ahora';
   >
     {label} <span aria-hidden="true">↗</span>
   </a>
+) : (
+  <button
+    class:list={['button', 'button--ghost', 'button--unavailable', { 'button--small': compact }]}
+    type="button"
+    disabled
+    data-card-play-pending
+  >Próximamente</button>
 )}

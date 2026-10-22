@@ -3,6 +3,9 @@ export const prerender = false;
 
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import PasswordEye from '../../components/PasswordEye.astro';
+import GameLaunch from '../../components/GameLaunch.astro';
+import { getPublicGameBySlug } from '../../lib/games';
+import { getGameAccess } from '../../lib/game-access.mjs';
 import { createAdminAuthClient, getAccount, sameOrigin, usernamePattern, validPassword } from '../../lib/account';
 import { describeAuthFailure } from '../../lib/auth-errors';
 import { MODERATION_ACTION_LABELS, MODERATION_SCOPE_LABELS, PLAYER_STATUS_LABELS, type BzIdentityPayload } from '../../config/bzId';
@@ -102,11 +105,11 @@ if (Astro.request.method === 'POST') {
 
 let profileResult = await supabase.from('profiles').select('username,username_change_count,username_changed_at').eq('user_id', user.id).single();
 if (profileResult.error) profileResult = await supabase.from('profiles').select('username').eq('user_id', user.id).single() as typeof profileResult;
-const [{ data: ratings }, identityResult, ufoProfileResult, ufoGameResult] = await Promise.all([
+const [{ data: ratings }, identityResult, ufoProfileResult, ufoGame] = await Promise.all([
   supabase.from('game_ratings').select('game_id,score,updated_at,games(name,slug)').order('updated_at', { ascending: false }),
   supabase.rpc('get_my_bz_id_data'),
   supabase.from('ufo_run_profiles').select('player_id,last_active_at').maybeSingle(),
-  supabase.from('games').select('name,play_url').eq('slug', 'ufo-run').eq('is_visible', true).maybeSingle(),
+  getPublicGameBySlug('ufo-run'),
 ]);
 
 type RelatedGame = { name: string; slug: string };
@@ -130,7 +133,6 @@ const usernameRemainingLabel = usernameLocked && nextUsernameChange
   ? formatRemainingTime(nextUsernameChange.getTime() - Date.now())
   : 'Disponible ahora';
 const ufoProfile = ufoProfileResult.error ? null : ufoProfileResult.data;
-const ufoGame = ufoGameResult.error ? null : ufoGameResult.data;
 const moderationScopeLabel = (measure: BzIdentityPayload['moderation'][number]) => measure.scopeName || MODERATION_SCOPE_LABELS[measure.scope] || 'Cuenta B&Z';
 const moderationDurationLabel = (measure: BzIdentityPayload['moderation'][number]) => {
   if (measure.action === 'warning') return 'Advertencia informativa';
@@ -198,7 +200,7 @@ const moderationDurationLabel = (measure: BzIdentityPayload['moderation'][number
 
         <details class="profile-disclosure">
           <summary><span>Vinculación de cuentas <small>Juegos asociados a tu B&Z ID</small></span><i aria-hidden="true"></i></summary>
-          <div class="profile-disclosure__content">{bzId?.gameAccounts.length ? <div class="linked-games">{bzId.gameAccounts.map((account) => <article><div><strong>{account.gameName}</strong><span>{account.displayName || account.platform}</span></div><span class="identity-status">{account.status}</span></article>)}</div> : ufoProfile ? <div class="linked-games"><article><div><strong>UFO RUN</strong><span>Vinculado automáticamente con tu B&Z ID</span></div><span class="identity-status">Activo</span></article></div> : <div class="identity-empty"><strong>UFO RUN está disponible</strong><p>No necesitás ingresar un código: la cuenta se vincula automáticamente la primera vez que entrás al juego con tu B&Z ID.</p>{ufoGame?.play_url ? <a class="button button--ghost button--small" href={ufoGame.play_url} target="_blank" rel="noreferrer">Abrir UFO RUN <span aria-hidden="true">↗</span></a> : <span>Ingresá desde el sitio oficial de UFO RUN.</span>}</div>}</div>
+          <div class="profile-disclosure__content">{bzId?.gameAccounts.length ? <div class="linked-games">{bzId.gameAccounts.map((account) => <article><div><strong>{account.gameName}</strong><span>{account.displayName || account.platform}</span></div><span class="identity-status">{account.status}</span></article>)}</div> : ufoProfile ? <div class="linked-games"><article><div><strong>UFO RUN</strong><span>Vinculado automáticamente con tu B&Z ID</span></div><span class="identity-status">Activo</span></article></div> : <div class="identity-empty"><strong>{ufoGame && getGameAccess(ufoGame).canPlay ? 'UFO RUN está disponible' : 'UFO RUN · Próximamente'}</strong><p>No necesitás ingresar un código: la cuenta se vincula automáticamente la primera vez que entrás al juego con tu B&Z ID.</p>{ufoGame && <GameLaunch game={ufoGame} compact />}</div>}</div>
         </details>
 
         <details class="profile-disclosure">

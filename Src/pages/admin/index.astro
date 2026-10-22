@@ -254,8 +254,12 @@ const serializedGames = games.map((game) => ({
                 <div class="admin-form-grid">
                   <div class="admin-field"><label for="status">Estado *</label><select id="status" name="status" required>{GAME_STATUSES.map((status) => <option value={status}>{status}</option>)}</select></div>
                   <div class="admin-field"><label for="published_at">Fecha de publicación</label><input id="published_at" name="published_at" type="date" /></div>
-                  <div class="admin-field"><label for="play_url">URL del juego</label><input id="play_url" name="play_url" type="url" placeholder="https://" aria-describedby="play-url-help" /><small id="play-url-help">“Jugar” abre esta dirección. La vista previa se ofrece por separado en la ficha, según los dispositivos que habilites abajo. Los juegos “Próximamente” no muestran ninguno de estos accesos.</small></div>
+                  <div class="admin-field"><label for="play_url">URL del juego</label><input id="play_url" name="play_url" type="url" placeholder="https://" aria-describedby="play-url-help" /><small id="play-url-help">“Jugar” abre esta dirección si está habilitado abajo. La vista previa se configura por separado. El estado “Próximamente” también bloquea el acceso para jugar.</small></div>
                   <div class="admin-field"><label for="trailer_url">URL del tráiler</label><input id="trailer_url" name="trailer_url" type="url" placeholder="https://" /></div>
+                  <div class="admin-field admin-field--full">
+                    <label class="admin-inline-check"><input name="play_enabled" type="checkbox" checked aria-describedby="play-enabled-help" /> Habilitar botón “Jugar”</label>
+                    <small id="play-enabled-help">Si lo desactivás, se mostrará “Próximamente” sin enlace en las tarjetas y la ficha. La URL, la vista previa y el contenido se conservan. Para jugar también se necesita una URL válida y un estado Disponible, Demo o En desarrollo.</small>
+                  </div>
                   <div class="admin-field admin-field--full"><label for="video_urls">Videos adicionales de YouTube</label><textarea id="video_urls" name="video_urls" rows="3" placeholder="Un enlace de YouTube por línea"></textarea><small>Se mostrarán junto a las capturas, después de la portada. El tráiler conserva su botón independiente.</small></div>
                   <fieldset class="admin-field admin-field--full admin-checks admin-preview-settings">
                     <legend>Vista previa en la ficha del juego</legend>
