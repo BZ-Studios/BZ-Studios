@@ -41,7 +41,7 @@ Los originales de marca permanecen intactos en `Src/Identidad/`. La copia transp
 
 La ruta `/juegos/slug-del-juego/`, su metadata, filtros y datos estructurados se generan automáticamente desde Supabase. Desde el mismo dashboard también podés actualizar el nombre, rol e Instagram de cada integrante, consultar usuarios con sus calificaciones y administrar los mensajes recibidos.
 
-Las descripciones completas de las fichas se resumen automáticamente a unos 300 caracteres, sin cortar palabras, con **Mostrar más / Mostrar menos**. Las descripciones cortas no muestran ese control. El texto guardado no cambia y, sin JavaScript, se muestra completo. No requiere SQL ni ajustes por juego.
+Las descripciones completas de las fichas se resumen automáticamente a unos 300 caracteres, sin cortar palabras. **Mostrar más** abre el texto completo en un modal con desplazamiento interno; la página de fondo queda bloqueada y recupera su posición al cerrar (botón, X, Escape o clic fuera). Las descripciones cortas no muestran ese control. El texto guardado no cambia y, sin JavaScript, se muestra completo. No requiere SQL ni ajustes por juego.
 
 La administración de identidad es multi-juego: **B&Z ID** concentra cuentas, sanciones y apelaciones, con búsqueda y filtro por juego. En **Juegos → Jugadores B&Z ID** se consultan las vinculaciones del juego elegido, en páginas de 20. El progreso específico se abre bajo demanda por jugador; UFO RUN ya tiene visor, sin una sección propia en el dashboard. No requiere SQL adicional. Ver `docs/bz-id-architecture.md` para los recorridos de prueba.
 

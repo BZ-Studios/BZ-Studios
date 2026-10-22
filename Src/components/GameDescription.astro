@@ -1,19 +1,31 @@
 ---
 import { splitGameDescription } from '../lib/game-description.mjs';
 
-interface Props { text: string }
-const { text } = Astro.props;
+interface Props { text: string; gameName: string }
+const { text, gameName } = Astro.props;
 const { preview, remainder } = splitGameDescription(text);
 const collapsedEnding = /[.!?…]$/u.test(preview) ? '' : '…';
-const remainderId = `game-description-${crypto.randomUUID()}`;
+const dialogId = `game-description-${crypto.randomUUID()}`;
+const titleId = `${dialogId}-title`;
 ---
 
 <div class="game-description" data-game-description>
-  <p class="lead">{preview}{remainder && <><span data-description-ellipsis hidden>{collapsedEnding}</span><span id={remainderId} data-description-rest>{remainder}</span></>}</p>
-  {remainder && <button class="game-description__toggle" type="button" aria-expanded="false" aria-controls={remainderId} data-description-toggle hidden>
-    <span data-description-label>Mostrar más</span>
+  <p class="lead">{preview}{remainder && <><span data-description-ellipsis hidden>{collapsedEnding}</span><span data-description-rest>{remainder}</span></>}</p>
+  {remainder && <button class="game-description__toggle" type="button" aria-haspopup="dialog" aria-controls={dialogId} data-description-toggle data-modal-open={dialogId} hidden>
+    Mostrar más
     <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6" /></svg>
   </button>}
+  {remainder && <dialog class="game-description-dialog" id={dialogId} data-modal-dialog aria-labelledby={titleId}>
+    <header class="game-description-dialog__heading">
+      <p class="game-description-dialog__eyebrow">Descripción completa</p>
+      <h2 id={titleId}>{gameName}</h2>
+      <button type="button" data-modal-close aria-label="Cerrar descripción"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+    </header>
+    <div class="game-description-dialog__body" tabindex="0" aria-label={`Descripción completa de ${gameName}`} data-description-scroll>
+      <p>{text.trim()}</p>
+    </div>
+    <footer class="game-description-dialog__footer"><button class="button button--ghost button--small" type="button" data-modal-close>Cerrar</button></footer>
+  </dialog>}
 </div>
 
 <script>
@@ -21,22 +33,16 @@ const remainderId = `game-description-${crypto.randomUUID()}`;
     const rest = description.querySelector<HTMLElement>('[data-description-rest]');
     const ellipsis = description.querySelector<HTMLElement>('[data-description-ellipsis]');
     const toggle = description.querySelector<HTMLButtonElement>('[data-description-toggle]');
-    const label = description.querySelector<HTMLElement>('[data-description-label]');
-    if (!rest || !ellipsis || !toggle || !label) return;
-
-    const setExpanded = (expanded: boolean) => {
-      rest.hidden = !expanded;
-      ellipsis.hidden = expanded;
-      toggle.setAttribute('aria-expanded', String(expanded));
-      label.textContent = expanded ? 'Mostrar menos' : 'Mostrar más';
-    };
+    if (!rest || !ellipsis || !toggle) return;
     // Without JavaScript the complete description remains readable.
-    setExpanded(false);
+    rest.hidden = true;
+    ellipsis.hidden = false;
     toggle.hidden = false;
-    toggle.addEventListener('click', () => {
-      const expanded = toggle.getAttribute('aria-expanded') !== 'true';
-      setExpanded(expanded);
-      if (!expanded) requestAnimationFrame(() => toggle.scrollIntoView({ block: 'nearest', behavior: 'instant' }));
+    const dialog = description.querySelector<HTMLDialogElement>('[data-modal-dialog]');
+    dialog?.addEventListener('toggle', () => {
+      if (!dialog.open) return;
+      const content = dialog.querySelector<HTMLElement>('[data-description-scroll]');
+      if (content) content.scrollTop = 0;
     });
   });
 </script>
@@ -48,5 +54,20 @@ const remainderId = `game-description-${crypto.randomUUID()}`;
   .game-description__toggle:hover { text-decoration: underline; text-underline-offset: .2em; }
   .game-description__toggle:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }
   .game-description__toggle svg { flex: 0 0 auto; }
-  .game-description__toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .game-description-dialog { width: min(calc(100% - 2rem),48rem); max-width: none; max-height: min(85svh,46rem); max-height: min(calc(100dvh - 2rem),46rem); margin: auto; padding: 0; overflow: hidden; border: 1px solid rgba(243,41,168,.4); border-radius: 14px; color: var(--text); background: linear-gradient(145deg,#17121f,#09080d); box-shadow: 0 2rem 7rem rgba(0,0,0,.65); }
+  .game-description-dialog[open] { display: flex; flex-direction: column; }
+  .game-description-dialog::backdrop { background: rgba(3,2,6,.8); backdrop-filter: blur(7px); }
+  .game-description-dialog__heading { flex: 0 0 auto; padding: 1.25rem 4.5rem 1rem 1.5rem; border-bottom: 1px solid var(--line); }
+  .game-description-dialog__eyebrow { margin: 0 0 .5rem; color: var(--yellow); font-size: .72rem; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+  .game-description-dialog__heading h2 { margin: 0; font-size: clamp(1.65rem,5vw,2.5rem); line-height: 1.1; overflow-wrap: anywhere; }
+  .game-description-dialog__body { flex: 1 1 auto; min-height: 0; padding: 1.25rem 1.5rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: var(--pink) transparent; -webkit-overflow-scrolling: touch; }
+  .game-description-dialog__body:focus-visible { outline-offset: -4px; }
+  .game-description-dialog__body p { margin: 0; color: #d3d1da; font-size: 1rem; line-height: 1.75; white-space: pre-line; overflow-wrap: anywhere; }
+  .game-description-dialog__footer { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: .85rem 1.5rem; border-top: 1px solid var(--line); }
+  @media (max-width: 520px) {
+    .game-description-dialog { width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); }
+    .game-description-dialog__heading { padding-left: 1rem; }
+    .game-description-dialog__body { padding: 1rem; }
+    .game-description-dialog__footer { padding: .75rem 1rem; }
+  }
 </style>

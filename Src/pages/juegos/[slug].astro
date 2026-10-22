@@ -74,7 +74,7 @@ const gameSchema = {
             <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
             <p class="kicker">{game.genres.join(' · ')}</p>
             <h1>{game.name}</h1>
-            <GameDescription text={game.description} />
+            <GameDescription text={game.description} gameName={game.name} />
             <div class="button-row">
               <GameLaunch game={game} />
               <GamePreview game={game} />
