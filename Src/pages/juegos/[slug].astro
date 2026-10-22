@@ -5,6 +5,7 @@ import GameRating from '../../components/GameRating.astro';
 import GameMediaGallery from '../../components/GameMediaGallery.astro';
 import GameLaunch from '../../components/GameLaunch.astro';
 import GamePreview from '../../components/GamePreview.astro';
+import GameDescription from '../../components/GameDescription.astro';
 import { recommendGames } from '../../lib/game-recommendations.mjs';
 import { getGameAccess } from '../../lib/game-access.mjs';
 import { siteConfig } from '../../config/site';
@@ -73,7 +74,7 @@ const gameSchema = {
             <span class="status-badge" data-status={game.status}><span aria-hidden="true"></span>{game.status}</span>
             <p class="kicker">{game.genres.join(' · ')}</p>
             <h1>{game.name}</h1>
-            <p class="lead">{game.description}</p>
+            <GameDescription text={game.description} />
             <div class="button-row">
               <GameLaunch game={game} />
               <GamePreview game={game} />
